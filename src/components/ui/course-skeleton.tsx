@@ -1,31 +1,31 @@
 import React from 'react';
-import { Skeleton } from './skeleton';
+import { Skeleton } from '@mui/material';
 
 export function CourseCardSkeleton() {
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       {/* Image skeleton */}
-      <Skeleton className="h-48 w-full rounded-none" />
+      <Skeleton variant="rectangular" width="100%" height={192} />
       
       {/* Content skeleton */}
       <div className="p-6">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             {/* Title skeleton */}
-            <Skeleton className="h-6 w-3/4 mb-2" />
-            <Skeleton className="h-4 w-1/2" />
+            <Skeleton variant="text" width="75%" height={24} sx={{ mb: 1 }} />
+            <Skeleton variant="text" width="50%" height={16} />
           </div>
           <div className="flex gap-2 ml-4">
             {/* Action buttons skeleton */}
-            <Skeleton className="h-6 w-6 rounded" />
+            <Skeleton variant="rounded" width={24} height={24} />
           </div>
         </div>
         
         {/* Description skeleton */}
         <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5" />
-          <Skeleton className="h-4 w-3/5" />
+          <Skeleton variant="text" width="100%" height={16} />
+          <Skeleton variant="text" width="80%" height={16} />
+          <Skeleton variant="text" width="60%" height={16} />
         </div>
       </div>
     </div>
@@ -47,11 +47,11 @@ export function StatsCardSkeleton() {
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center">
         <div className="p-3 bg-gray-100 rounded-lg">
-          <Skeleton className="w-6 h-6" />
+          <Skeleton variant="rounded" width={24} height={24} />
         </div>
         <div className="ml-4 flex-1">
-          <Skeleton className="h-4 w-20 mb-2" />
-          <Skeleton className="h-8 w-16" />
+          <Skeleton variant="text" width={80} height={16} sx={{ mb: 1 }} />
+          <Skeleton variant="text" width={64} height={32} />
         </div>
       </div>
     </div>

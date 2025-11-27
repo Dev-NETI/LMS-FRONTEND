@@ -13,10 +13,12 @@ import {
 } from "@/src/services/courseService";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import { Course, Student } from "@/src/components/admin/course/types";
+import { Skeleton } from "@mui/material";
+import { Course } from "@/src/components/admin/course/types";
 import CourseSchedulePage from "@/src/components/admin/course/CourseSchedule";
 import CourseOverviewPage from "@/src/components/admin/course/CourseOverview";
 import CourseContentPage from "@/src/components/admin/course/CourseContent";
+import CourseTrainingMaterials from "@/src/components/admin/course/CourseTrainingMaterials";
 
 // Transform backend course data to frontend format
 const transformCourseData = (backendCourse: AdminCourse): Course => {
@@ -25,84 +27,32 @@ const transformCourseData = (backendCourse: AdminCourse): Course => {
     id: backendCourse.courseid,
     title: backendCourse.coursename,
     description: backendCourse.coursedescription || "No description available",
-    instructor: "TBD", // TODO: Add instructor field to backend
-    duration: "TBD", // TODO: Add duration field to backend
-    level: "Beginner", // TODO: Add level field to backend
+    instructor: "TBD",
+    duration: "TBD",
+    level: "Beginner",
     category: backendCourse.coursecategory || "General",
     thumbnail: "/images/default-course.jpg",
     createdAt: backendCourse.coursecreationdate,
     updatedAt: backendCourse.courseupdateddate,
-    status: "Published", // TODO: Add status field to backend
-    price: 0, // TODO: Add price field to backend
-    tags: [], // TODO: Add tags field to backend
-    syllabus: [
-      "Course Introduction",
-      "Module 1: Fundamentals",
-      "Module 2: Practical Applications",
-      "Module 3: Advanced Topics",
-      "Final Assessment",
-    ], // TODO: Add syllabus from backend
-    requirements: [
-      "Basic knowledge of the subject",
-      "Access to course materials",
-    ], // TODO: Add requirements from backend
-    objectives: [
-      "Master the core concepts",
-      "Apply knowledge in practical scenarios",
-      "Complete all assessments successfully",
-    ], // TODO: Add objectives from backend
+    status: "Published",
+    price: 0,
+    tags: [],
+    syllabus: [],
+    requirements: [],
+    objectives: [],
   };
 };
-
-const mockStudents: Student[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@maritime.com",
-    enrolledAt: "2024-09-01T10:00:00Z",
-    progress: 85,
-    status: "Active",
-    lastActivity: "2024-11-17T14:30:00Z",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    email: "sarah.j@shipping.com",
-    enrolledAt: "2024-09-15T09:15:00Z",
-    progress: 100,
-    status: "Completed",
-    lastActivity: "2024-11-10T16:45:00Z",
-  },
-  {
-    id: 3,
-    name: "Mike Wilson",
-    email: "m.wilson@oceanline.com",
-    enrolledAt: "2024-10-01T11:30:00Z",
-    progress: 45,
-    status: "Active",
-    lastActivity: "2024-11-18T08:20:00Z",
-  },
-  {
-    id: 4,
-    name: "Emma Davis",
-    email: "emma.davis@coastal.com",
-    enrolledAt: "2024-08-20T13:45:00Z",
-    progress: 25,
-    status: "Dropped",
-    lastActivity: "2024-10-15T12:10:00Z",
-  },
-];
 
 export default function CourseDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [course, setCourse] = useState<Course | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
   const [schedule, setSchedule] = useState<CourseSchedule[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "content" | "schedule"
+    "overview" | "content" | "schedule" | "materials"
   >("overview");
   const [isLoading, setIsLoading] = useState(true);
+  const [isScheduleLoading, setIsScheduleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -126,6 +76,7 @@ export default function CourseDetailsPage() {
 
         // Fetch course schedule
         try {
+          setIsScheduleLoading(true);
           const scheduleResponse = await getCourseSchedule(Number(params.id));
           if (scheduleResponse.success) {
             setSchedule(scheduleResponse.data);
@@ -133,10 +84,9 @@ export default function CourseDetailsPage() {
         } catch (scheduleError) {
           console.warn("Failed to fetch course schedule:", scheduleError);
           // Don't show error for schedule as it's optional
+        } finally {
+          setIsScheduleLoading(false);
         }
-
-        // TODO: Fetch enrolled students when backend provides this endpoint
-        setStudents(mockStudents);
       } catch (err) {
         const errorMessage =
           err instanceof Error
@@ -157,10 +107,84 @@ export default function CourseDetailsPage() {
     return (
       <AuthGuard>
         <AdminLayout>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading course details...</p>
+          <div className="space-y-6">
+            {/* Header skeleton */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center space-x-3">
+                <Skeleton variant="circular" width={32} height={32} />
+                <div>
+                  <Skeleton
+                    variant="text"
+                    width={256}
+                    height={32}
+                    sx={{ mb: 1 }}
+                  />
+                  <Skeleton variant="text" width={192} height={16} />
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Tabs skeleton */}
+            <div className="bg-white border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8 px-6">
+                <Skeleton variant="rectangular" width={96} height={48} />
+                <Skeleton variant="rectangular" width={80} height={48} />
+                <Skeleton variant="rectangular" width={112} height={48} />
+              </nav>
+            </div>
+
+            {/* Content skeleton */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="space-y-6">
+                {/* Overview content skeleton */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <Skeleton variant="text" width={128} height={24} />
+                    <div className="space-y-2">
+                      <Skeleton variant="text" width="100%" height={16} />
+                      <Skeleton variant="text" width="100%" height={16} />
+                      <Skeleton variant="text" width="75%" height={16} />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <Skeleton variant="text" width={112} height={24} />
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <Skeleton variant="text" width={80} height={16} />
+                        <Skeleton variant="text" width={64} height={16} />
+                      </div>
+                      <div className="flex justify-between">
+                        <Skeleton variant="text" width={96} height={16} />
+                        <Skeleton variant="text" width={80} height={16} />
+                      </div>
+                      <div className="flex justify-between">
+                        <Skeleton variant="text" width={64} height={16} />
+                        <Skeleton variant="text" width={48} height={16} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats cards skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex items-center">
+                        <Skeleton variant="rounded" width={32} height={32} />
+                        <div className="ml-3 flex-1">
+                          <Skeleton
+                            variant="text"
+                            width={64}
+                            height={12}
+                            sx={{ mb: 0.5 }}
+                          />
+                          <Skeleton variant="text" width={48} height={24} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </AdminLayout>
@@ -275,8 +299,17 @@ export default function CourseDetailsPage() {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Schedule (
-                {schedule.filter((s) => s.courseid === s.courseid).length})
+                Schedule ({schedule.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("materials")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "materials"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Training Materials
               </button>
             </nav>
           </div>
@@ -286,9 +319,104 @@ export default function CourseDetailsPage() {
 
           {activeTab === "content" && <CourseContentPage course={course} />}
 
-          {activeTab === "schedule" && (
-            <CourseSchedulePage schedule={schedule} />
-          )}
+          {activeTab === "schedule" &&
+            (isScheduleLoading ? (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="p-6 border-b border-gray-200">
+                  <Skeleton
+                    variant="text"
+                    width={192}
+                    height={24}
+                    sx={{ mb: 1 }}
+                  />
+                  <Skeleton variant="text" width={288} height={16} />
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        {Array.from({ length: 6 }).map((_, index) => (
+                          <th key={index} className="px-6 py-3">
+                            <Skeleton variant="text" width={80} height={16} />
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {Array.from({ length: 5 }).map((_, rowIndex) => (
+                        <tr key={rowIndex}>
+                          {Array.from({ length: 6 }).map((_, colIndex) => (
+                            <td key={colIndex} className="px-6 py-4">
+                              {colIndex === 0 ? (
+                                <div className="flex items-center">
+                                  <Skeleton
+                                    variant="rounded"
+                                    width={32}
+                                    height={32}
+                                    sx={{ mr: 2 }}
+                                  />
+                                  <Skeleton
+                                    variant="text"
+                                    width={96}
+                                    height={16}
+                                  />
+                                </div>
+                              ) : colIndex === 4 ? (
+                                <div>
+                                  <div className="flex items-center mb-1">
+                                    <Skeleton
+                                      variant="circular"
+                                      width={16}
+                                      height={16}
+                                      sx={{ mr: 0.5 }}
+                                    />
+                                    <Skeleton
+                                      variant="text"
+                                      width={32}
+                                      height={16}
+                                    />
+                                    <Skeleton
+                                      variant="text"
+                                      width={32}
+                                      height={16}
+                                      sx={{ ml: 1 }}
+                                    />
+                                  </div>
+                                  <Skeleton
+                                    variant="text"
+                                    width={128}
+                                    height={12}
+                                  />
+                                </div>
+                              ) : (
+                                <div>
+                                  <Skeleton
+                                    variant="text"
+                                    width={80}
+                                    height={16}
+                                    sx={{ mb: 0.5 }}
+                                  />
+                                  <Skeleton
+                                    variant="text"
+                                    width={64}
+                                    height={12}
+                                  />
+                                </div>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <CourseSchedulePage schedule={schedule} />
+            ))}
+
+          {activeTab === "materials" && <CourseTrainingMaterials courseId={course.id} />}
         </div>
       </AdminLayout>
     </AuthGuard>

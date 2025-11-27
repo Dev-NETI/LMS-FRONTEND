@@ -3,6 +3,7 @@
 import React from "react";
 import { CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { CourseSchedule } from "@/src/services/courseService";
+import Link from "next/link";
 
 interface CourseScheduleProps {
   schedule: CourseSchedule[];
@@ -157,9 +158,13 @@ export default function CourseSchedulePage({ schedule }: CourseScheduleProps) {
                         )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900 mr-4">
-                        View
-                      </button>
+                      <Link
+                        href={`/admin/schedules/${scheduleItem.scheduleid}`}
+                      >
+                        <button className="text-blue-600 hover:text-blue-900 mr-4">
+                          View
+                        </button>
+                      </Link>
                       {(scheduleItem.enrolled_students?.length || 0) > 0 && (
                         <button className="text-green-600 hover:text-green-900">
                           Students
