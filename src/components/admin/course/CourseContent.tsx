@@ -7,7 +7,7 @@ interface CourseContentProps {
   course: Course;
 }
 
-export default function CourseContent({ course }: CourseContentProps) {
+export default function CourseContentPage({ course }: CourseContentProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-6">
@@ -25,9 +25,7 @@ export default function CourseContent({ course }: CourseContentProps) {
               </span>
             </div>
             <div className="ml-4">
-              <h4 className="text-sm font-medium text-gray-900">
-                {item}
-              </h4>
+              <h4 className="text-sm font-medium text-gray-900">{item}</h4>
             </div>
           </div>
         ))}

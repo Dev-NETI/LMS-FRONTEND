@@ -1,292 +1,176 @@
 "use client";
 
 import React from "react";
-import {
-  CalendarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline";
-import { ScheduleEvent } from "./types";
+import { CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
+import { CourseSchedule } from "@/src/services/courseService";
 
 interface CourseScheduleProps {
-  schedule: ScheduleEvent[];
+  schedule: CourseSchedule[];
 }
 
-export default function CourseSchedule({ schedule }: CourseScheduleProps) {
-  const getEventTypeColor = (type: string) => {
-    switch (type) {
-      case "Lecture":
-        return "bg-blue-100 text-blue-800";
-      case "Workshop":
-        return "bg-green-100 text-green-800";
-      case "Quiz":
-        return "bg-yellow-100 text-yellow-800";
-      case "Exam":
-        return "bg-red-100 text-red-800";
-      case "Assignment":
-        return "bg-purple-100 text-purple-800";
-      case "Discussion":
-        return "bg-orange-100 text-orange-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getEventStatusColor = (status: string) => {
-    switch (status) {
-      case "Scheduled":
-        return "bg-blue-100 text-blue-800";
-      case "Completed":
-        return "bg-green-100 text-green-800";
-      case "Cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const formatEventDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatEventTime = (startTime: string, endTime: string) => {
-    return `${startTime} - ${endTime}`;
-  };
-
-  const isEventToday = (dateString: string) => {
-    const today = new Date().toDateString();
-    const eventDate = new Date(dateString).toDateString();
-    return today === eventDate;
-  };
-
-  const isEventUpcoming = (dateString: string) => {
-    const today = new Date();
-    const eventDate = new Date(dateString);
-    return eventDate > today;
-  };
-
+export default function CourseSchedulePage({ schedule }: CourseScheduleProps) {
   const sortedSchedule = [...schedule].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) =>
+      new Date(a.startdateformat).getTime() -
+      new Date(b.startdateformat).getTime()
   );
 
   return (
     <div className="space-y-6">
-      {/* Schedule Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CalendarIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-xs font-medium text-gray-600">
-                Total Events
-              </p>
-              <p className="text-lg font-bold text-gray-900">
-                {schedule.length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircleIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-xs font-medium text-gray-600">
-                Completed
-              </p>
-              <p className="text-lg font-bold text-gray-900">
-                {
-                  schedule.filter(
-                    (event) => event.status === "Completed"
-                  ).length
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <ClockIcon className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-xs font-medium text-gray-600">
-                Upcoming
-              </p>
-              <p className="text-lg font-bold text-gray-900">
-                {
-                  schedule.filter((event) =>
-                    isEventUpcoming(event.date)
-                  ).length
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <UsersIcon className="w-5 h-5 text-purple-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-xs font-medium text-gray-600">
-                Avg Attendance
-              </p>
-              <p className="text-lg font-bold text-gray-900">
-                {schedule.length > 0 ? Math.round(
-                  schedule.reduce(
-                    (acc, event) => acc + (event.attendees || 0),
-                    0
-                  ) / schedule.length
-                ) : 0}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Schedule Events */}
-      <div className="bg-white rounded-lg border border-gray-200">
+      {/* Schedule Events Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
             Course Schedule
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-            All scheduled events, lectures, and assessments for this
-            course
+            All scheduled training, lectures, and assessments for this course
           </p>
         </div>
 
-        <div className="p-6">
-          <div className="space-y-4">
-            {sortedSchedule.map((event) => (
-              <div
-                key={`schedule-event-${event.id}`}
-                className={`border rounded-lg p-4 transition-all hover:shadow-md ${
-                  isEventToday(event.date)
-                    ? "border-blue-300 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-base font-semibold text-gray-900">
-                        {event.title}
-                      </h4>
-                      {isEventToday(event.date) && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                          Today
-                        </span>
-                      )}
-                    </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Batch Number
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Start Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  End Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Duration
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Enrollment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedSchedule.map((scheduleItem) => {
+                const startDate = new Date(scheduleItem.startdateformat);
+                const endDate = new Date(scheduleItem.enddateformat);
+                const today = new Date();
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600 font-medium">
-                          Date & Time
-                        </p>
-                        <p className="text-gray-900">
-                          {formatEventDate(event.date)}
-                        </p>
-                        <p className="text-gray-700">
-                          {formatEventTime(
-                            event.startTime,
-                            event.endTime
-                          )}
-                        </p>
-                      </div>
+                // Determine status based on dates
+                let status = "Scheduled";
+                let statusColor = "bg-blue-100 text-blue-800";
 
-                      <div>
-                        <p className="text-gray-600 font-medium">
-                          Location
-                        </p>
-                        <p className="text-gray-900">
-                          {event.location || "TBD"}
-                        </p>
-                      </div>
+                if (endDate < today) {
+                  status = "Completed";
+                  statusColor = "bg-green-100 text-green-800";
+                } else if (startDate <= today && endDate >= today) {
+                  status = "In Progress";
+                  statusColor = "bg-yellow-100 text-yellow-800";
+                }
 
-                      <div>
-                        <p className="text-gray-600 font-medium">
-                          Instructor
-                        </p>
-                        <p className="text-gray-900">
-                          {event.instructor}
-                        </p>
-                      </div>
+                // Calculate duration in days
+                const durationMs = endDate.getTime() - startDate.getTime();
+                const durationDays = Math.max(
+                  1,
+                  Math.ceil(durationMs / (1000 * 60 * 60 * 24))
+                );
 
-                      <div>
-                        <p className="text-gray-600 font-medium">
-                          Attendance
-                        </p>
-                        <p className="text-gray-900">
-                          {event.attendees || 0}/
-                          {event.maxAttendees || "No limit"}
-                        </p>
-                        {event.maxAttendees && (
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                            <div
-                              className="bg-blue-600 h-1.5 rounded-full"
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  ((event.attendees || 0) /
-                                    event.maxAttendees) *
-                                    100
-                                )}%`,
-                              }}
-                            />
+                return (
+                  <tr
+                    key={`schedule-event-${scheduleItem.scheduleid}`}
+                    className="hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-8 w-8">
+                          <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <CalendarIcon className="h-4 w-4 text-blue-600" />
                           </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {scheduleItem.batchno}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {startDate.toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {startDate.toLocaleDateString("en-US", {
+                          weekday: "short",
+                        })}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {endDate.toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {endDate.toLocaleDateString("en-US", {
+                          weekday: "short",
+                        })}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {durationDays === 1 ? "1 day" : `${durationDays} days`}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center">
+                          <UsersIcon className="h-4 w-4 text-gray-400 mr-1" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {scheduleItem.active_enrolled || 0}
+                          </span>
+                          <span className="text-xs text-gray-500 ml-1">
+                            / {scheduleItem.total_enrolled || 0}
+                          </span>
+                        </div>
+                        {(scheduleItem.active_enrolled || 0) > 0 && (
+                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                            Active
+                          </span>
                         )}
                       </div>
-                    </div>
-
-                    {event.description && (
-                      <div className="mt-3">
-                        <p className="text-gray-600 font-medium text-sm mb-1">
-                          Description
-                        </p>
-                        <p className="text-gray-700 text-sm">
-                          {event.description}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="ml-4 flex flex-col items-end gap-2">
-                    <div className="flex gap-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getEventTypeColor(
-                          event.type
-                        )}`}
-                      >
-                        {event.type}
-                      </span>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getEventStatusColor(
-                          event.status
-                        )}`}
-                      >
-                        {event.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                      {scheduleItem.enrolled_students &&
+                        scheduleItem.enrolled_students.length > 0 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Latest:{" "}
+                            {scheduleItem.enrolled_students[0]?.trainee_name}
+                            {scheduleItem.enrolled_students.length > 1 &&
+                              ` +${
+                                scheduleItem.enrolled_students.length - 1
+                              } more`}
+                          </div>
+                        )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900 mr-4">
+                        View
+                      </button>
+                      {(scheduleItem.enrolled_students?.length || 0) > 0 && (
+                        <button className="text-green-600 hover:text-green-900">
+                          Students
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 

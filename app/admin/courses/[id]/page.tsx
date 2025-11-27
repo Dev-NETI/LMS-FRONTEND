@@ -9,18 +9,14 @@ import {
   getCourseById,
   getCourseSchedule,
   AdminCourse,
-  CourseScheduleEvent,
+  CourseSchedule,
 } from "@/src/services/courseService";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import CourseOverview from "@/src/components/admin/course/CourseOverview";
-import CourseContent from "@/src/components/admin/course/CourseContent";
-import CourseSchedule from "@/src/components/admin/course/CourseSchedule";
-import {
-  Course,
-  Student,
-  ScheduleEvent,
-} from "@/src/components/admin/course/types";
+import { Course, Student } from "@/src/components/admin/course/types";
+import CourseSchedulePage from "@/src/components/admin/course/CourseSchedule";
+import CourseOverviewPage from "@/src/components/admin/course/CourseOverview";
+import CourseContentPage from "@/src/components/admin/course/CourseContent";
 
 // Transform backend course data to frontend format
 const transformCourseData = (backendCourse: AdminCourse): Course => {
@@ -97,116 +93,12 @@ const mockStudents: Student[] = [
   },
 ];
 
-const mockSchedule: ScheduleEvent[] = [
-  {
-    id: 1,
-    title: "Course Introduction & Safety Overview",
-    type: "Lecture",
-    date: "2024-11-25",
-    startTime: "09:00",
-    endTime: "10:30",
-    instructor: "Captain John Smith",
-    location: "Training Room A",
-    description:
-      "Introduction to maritime safety principles and course objectives",
-    status: "Scheduled",
-    attendees: 45,
-    maxAttendees: 50,
-  },
-  {
-    id: 2,
-    title: "Personal Protective Equipment Workshop",
-    type: "Workshop",
-    date: "2024-11-27",
-    startTime: "14:00",
-    endTime: "16:00",
-    instructor: "Captain John Smith",
-    location: "Workshop Bay 1",
-    description:
-      "Hands-on training with safety equipment and proper usage techniques",
-    status: "Scheduled",
-    attendees: 38,
-    maxAttendees: 40,
-  },
-  {
-    id: 3,
-    title: "Safety Regulations Quiz",
-    type: "Quiz",
-    date: "2024-11-29",
-    startTime: "10:00",
-    endTime: "11:00",
-    instructor: "Captain John Smith",
-    location: "Online",
-    description: "Assessment of basic safety regulation knowledge",
-    status: "Scheduled",
-    attendees: 0,
-    maxAttendees: 100,
-  },
-  {
-    id: 4,
-    title: "Emergency Response Simulation",
-    type: "Workshop",
-    date: "2024-12-02",
-    startTime: "09:00",
-    endTime: "12:00",
-    instructor: "Captain John Smith",
-    location: "Simulation Deck",
-    description: "Full-scale emergency response drill and simulation exercise",
-    status: "Scheduled",
-    attendees: 32,
-    maxAttendees: 35,
-  },
-  {
-    id: 5,
-    title: "Fire Safety Training Completed",
-    type: "Lecture",
-    date: "2024-11-20",
-    startTime: "13:00",
-    endTime: "15:00",
-    instructor: "Captain John Smith",
-    location: "Training Room B",
-    description: "Fire prevention and suppression techniques",
-    status: "Completed",
-    attendees: 48,
-    maxAttendees: 50,
-  },
-  {
-    id: 6,
-    title: "Mid-term Assessment",
-    type: "Exam",
-    date: "2024-12-05",
-    startTime: "09:00",
-    endTime: "11:00",
-    instructor: "Captain John Smith",
-    location: "Examination Hall",
-    description: "Comprehensive assessment covering weeks 1-4 material",
-    status: "Scheduled",
-    attendees: 0,
-    maxAttendees: 60,
-  },
-  {
-    id: 7,
-    title: "Group Discussion: Case Studies",
-    type: "Discussion",
-    date: "2024-12-08",
-    startTime: "15:00",
-    endTime: "16:30",
-    instructor: "Captain John Smith",
-    location: "Conference Room C",
-    description:
-      "Analysis and discussion of real-world maritime safety incidents",
-    status: "Scheduled",
-    attendees: 25,
-    maxAttendees: 30,
-  },
-];
-
 export default function CourseDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [course, setCourse] = useState<Course | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
-  const [schedule, setSchedule] = useState<ScheduleEvent[]>([]);
+  const [schedule, setSchedule] = useState<CourseSchedule[]>([]);
   const [activeTab, setActiveTab] = useState<
     "overview" | "content" | "schedule"
   >("overview");
@@ -260,45 +152,6 @@ export default function CourseDetailsPage() {
 
     fetchCourse();
   }, [params.id]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Published":
-        return "bg-green-100 text-green-800";
-      case "Draft":
-        return "bg-yellow-100 text-yellow-800";
-      case "Archived":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "bg-blue-100 text-blue-800";
-      case "Intermediate":
-        return "bg-purple-100 text-purple-800";
-      case "Advanced":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStudentStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-blue-100 text-blue-800";
-      case "Completed":
-        return "bg-green-100 text-green-800";
-      case "Dropped":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   if (isLoading) {
     return (
@@ -389,22 +242,6 @@ export default function CourseDetailsPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                  course.status
-                )}`}
-              >
-                {course.status}
-              </span>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${getLevelColor(
-                  course.level
-                )}`}
-              >
-                {course.level}
-              </span>
-            </div>
           </div>
 
           {/* Navigation Tabs */}
@@ -439,21 +276,19 @@ export default function CourseDetailsPage() {
                 }`}
               >
                 Schedule (
-                {
-                  schedule.filter((event) => event.status === "Scheduled")
-                    .length
-                }
-                )
+                {schedule.filter((s) => s.courseid === s.courseid).length})
               </button>
             </nav>
           </div>
 
           {/* Tab Content */}
-          {activeTab === "overview" && <CourseOverview course={course} />}
+          {activeTab === "overview" && <CourseOverviewPage course={course} />}
 
-          {activeTab === "content" && <CourseContent course={course} />}
+          {activeTab === "content" && <CourseContentPage course={course} />}
 
-          {activeTab === "schedule" && <CourseSchedule schedule={schedule} />}
+          {activeTab === "schedule" && (
+            <CourseSchedulePage schedule={schedule} />
+          )}
         </div>
       </AdminLayout>
     </AuthGuard>

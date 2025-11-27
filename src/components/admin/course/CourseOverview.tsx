@@ -12,7 +12,7 @@ interface CourseOverviewProps {
   course: Course;
 }
 
-export default function CourseOverview({ course }: CourseOverviewProps) {
+export default function CourseOverviewPage({ course }: CourseOverviewProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -29,9 +29,7 @@ export default function CourseOverview({ course }: CourseOverviewProps) {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Course Description
           </h3>
-          <p className="text-gray-700 leading-relaxed">
-            {course.description}
-          </p>
+          <p className="text-gray-700 leading-relaxed">{course.description}</p>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -100,9 +98,7 @@ export default function CourseOverview({ course }: CourseOverviewProps) {
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Tags
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
           <div className="flex flex-wrap gap-2">
             {course.tags.map((tag, index) => (
               <span

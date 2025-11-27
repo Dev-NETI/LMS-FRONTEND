@@ -60,24 +60,37 @@ export interface AdminCoursesResponse {
   message: string;
 }
 
-export interface CourseScheduleEvent {
-  id: number;
+export interface CourseSchedule {
+  scheduleid: number;
+  courseid: number;
   title: string;
+  batchno: string;
   type: "Lecture" | "Assignment" | "Quiz" | "Exam" | "Workshop" | "Discussion";
   date: string;
-  startTime: string;
-  endTime: string;
+  startdateformat: string;
+  enddateformat: string;
   instructor: string;
   location?: string;
   description?: string;
   status: "Scheduled" | "Completed" | "Cancelled";
   attendees?: number;
   maxAttendees?: number;
+  total_enrolled?: number;
+  active_enrolled?: number;
+  enrolled_students?: EnrolledStudent[];
+}
+
+export interface EnrolledStudent {
+  enrollment_id: number;
+  trainee_id: number;
+  trainee_name: string;
+  date_registered: string;
+  status: string;
 }
 
 export interface CourseScheduleResponse {
   success: boolean;
-  data: CourseScheduleEvent[];
+  data: CourseSchedule[];
   message: string;
 }
 
