@@ -19,11 +19,11 @@ import {
 import AnnouncementFeed from "@/src/components/admin/schedule/AnnouncementFeed";
 import ProgressMonitoring from "@/src/components/admin/schedule/ProgressMonitoring";
 import TrainingMaterials from "@/src/components/admin/schedule/TrainingMaterials";
+import EnrolledStudents from "@/src/components/admin/schedule/EnrolledStudents";
 import {
   CourseSchedule,
   getCourseScheduleById,
 } from "@/src/services/scheduleService";
-import { getCourseById } from "@/src/services/courseService";
 
 export default function ScheduleDetailsPage() {
   const params = useParams();
@@ -31,7 +31,7 @@ export default function ScheduleDetailsPage() {
   const [schedule, setSchedule] = useState<CourseSchedule | null>(null);
   const [courseName, setCourseName] = useState<string>("");
   const [activeTab, setActiveTab] = useState<
-    "announcements" | "progress" | "materials"
+    "announcements" | "progress" | "materials" | "students"
   >("announcements");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +89,7 @@ export default function ScheduleDetailsPage() {
     const endDate = new Date(end);
     const diffTime = endDate.getTime() - startDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return diffDays + 1;
   };
 
   if (isLoading) {
@@ -309,7 +309,7 @@ export default function ScheduleDetailsPage() {
               </button>
 
               {/* Only show Progress Monitoring if mode of delivery is NOT 4 (self-paced distance learning) */}
-              {schedule.modeofdeliveryid !== 4 && (
+              {schedule.course?.modeofdeliveryid === 4 && (
                 <button
                   onClick={() => setActiveTab("progress")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
@@ -335,6 +335,19 @@ export default function ScheduleDetailsPage() {
                 <DocumentTextIcon className="w-5 h-5 mr-2" />
                 Training Materials
               </button>
+
+              {/* Enrolled Students tab - available for all modes */}
+              <button
+                onClick={() => setActiveTab("students")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
+                  activeTab === "students"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <UsersIcon className="w-5 h-5 mr-2" />
+                Enrolled Students ({schedule.enrolled_students?.length || 0})
+              </button>
             </nav>
           </div>
 
@@ -343,12 +356,19 @@ export default function ScheduleDetailsPage() {
             <AnnouncementFeed scheduleId={schedule.scheduleid} />
           )}
 
-          {activeTab === "progress" && schedule.modeofdeliveryid !== 4 && (
+          {activeTab === "progress" && schedule.modeofdeliveryid === 4 && (
             <ProgressMonitoring scheduleId={schedule.scheduleid} />
           )}
 
           {activeTab === "materials" && (
             <TrainingMaterials scheduleId={schedule.scheduleid} />
+          )}
+
+          {activeTab === "students" && (
+            <EnrolledStudents
+              students={schedule.enrolled_students || []}
+              isLoading={false}
+            />
           )}
         </div>
       </AdminLayout>

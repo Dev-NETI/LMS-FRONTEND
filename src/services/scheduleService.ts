@@ -21,14 +21,21 @@ export interface CourseSchedule {
 export interface Course {
   courseid: number;
   coursename: string;
+  modeofdeliveryid?: number;
 }
 
 export interface EnrolledStudent {
   enrollment_id: number;
   trainee_id: number;
   trainee_name: string;
-  date_registered: string;
-  status: string;
+  date_confirmed: string;
+  status: string | any;
+  email?: string;
+  phone?: string;
+  department?: string;
+  rank?: string;
+  rankacronym?: string;
+  contact_num?: string;
 }
 
 export interface CourseScheduleResponse {
