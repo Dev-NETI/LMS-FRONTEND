@@ -1,4 +1,4 @@
-import { AdminCourse, CourseSchedule as ServiceCourseSchedule } from "@/src/services/courseService";
+import { AdminCourse } from "@/src/services/courseService";
 
 // Use AdminCourse from service and extend with frontend properties
 export type Course = AdminCourse & {
@@ -29,6 +29,3 @@ export interface Student {
   status: "Active" | "Completed" | "Dropped";
   lastActivity: string;
 }
-
-// Use CourseSchedule from service
-export type CourseSchedule = ServiceCourseSchedule;

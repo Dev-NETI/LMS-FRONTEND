@@ -5,12 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "@/src/components/admin/AdminLayout";
 import AuthGuard from "@/src/components/auth/AuthGuard";
 import { Button } from "@/src/components/ui/button";
-import {
-  getCourseById,
-  getCourseSchedule,
-  AdminCourse,
-  CourseSchedule,
-} from "@/src/services/courseService";
+import { getCourseById, AdminCourse } from "@/src/services/courseService";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { Skeleton } from "@mui/material";
@@ -19,6 +14,10 @@ import CourseSchedulePage from "@/src/components/admin/course/CourseSchedule";
 import CourseOverviewPage from "@/src/components/admin/course/CourseOverview";
 import CourseContentPage from "@/src/components/admin/course/CourseContent";
 import CourseTrainingMaterials from "@/src/components/admin/course/CourseTrainingMaterials";
+import {
+  CourseSchedule,
+  getCourseSchedule,
+} from "@/src/services/scheduleService";
 
 // Transform backend course data to frontend format
 const transformCourseData = (backendCourse: AdminCourse): Course => {
@@ -257,6 +256,11 @@ export default function CourseDetailsPage() {
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
                 Back to Courses
               </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {course.title}
@@ -416,7 +420,9 @@ export default function CourseDetailsPage() {
               <CourseSchedulePage schedule={schedule} />
             ))}
 
-          {activeTab === "materials" && <CourseTrainingMaterials courseId={course.id} />}
+          {activeTab === "materials" && (
+            <CourseTrainingMaterials courseId={course.id} />
+          )}
         </div>
       </AdminLayout>
     </AuthGuard>

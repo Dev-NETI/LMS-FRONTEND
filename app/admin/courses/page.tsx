@@ -5,20 +5,21 @@ import { useRouter } from "next/navigation";
 import AdminLayout from "@/src/components/admin/AdminLayout";
 import AuthGuard from "@/src/components/auth/AuthGuard";
 import { Button } from "@/src/components/ui/button";
-import { getAllCourses, AdminCourse, PaginationParams, PaginationMeta } from "@/src/services/courseService";
-import { CourseGridSkeleton, StatsCardSkeleton } from "@/src/components/ui/course-skeleton";
+import {
+  getAllCourses,
+  AdminCourse,
+  PaginationParams,
+  PaginationMeta,
+} from "@/src/services/courseService";
+import {
+  CourseGridSkeleton,
+  StatsCardSkeleton,
+} from "@/src/components/ui/course-skeleton";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import toast from "react-hot-toast";
 import {
-  PlusIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
-  AdjustmentsHorizontalIcon,
   EyeIcon,
-  PencilIcon,
-  UsersIcon,
-  ClockIcon,
-  StarIcon,
   BookOpenIcon,
 } from "@heroicons/react/24/outline";
 
@@ -38,7 +39,7 @@ const transformCourseData = (backendCourse: AdminCourse): Course => {
     id: backendCourse.courseid,
     title: backendCourse.coursename,
     description: backendCourse.coursedescription || "No description available",
-    thumbnail: backendCourse.thumbnail || "/images/default-course.jpg",
+    thumbnail: "/images/default-course.jpg",
   };
 };
 
@@ -89,13 +90,13 @@ export default function AdminCoursesPage() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const params: PaginationParams = {
           page: currentPage,
           limit: itemsPerPage,
-          search: debouncedSearchQuery || undefined
+          search: debouncedSearchQuery || undefined,
         };
-        
+
         const response = await getAllCourses(params);
 
         console.log(response);
@@ -123,8 +124,6 @@ export default function AdminCoursesPage() {
 
     fetchCourses();
   }, [currentPage, itemsPerPage, debouncedSearchQuery]);
-
-
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -262,25 +261,6 @@ export default function AdminCoursesPage() {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <BookOpenIcon className="w-6 h-6 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Courses
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {pagination?.totalItems || courses.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Search and Filters */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -300,7 +280,10 @@ export default function AdminCoursesPage() {
             {/* Results count */}
             <div className="mt-4 text-sm text-gray-600">
               {pagination ? (
-                <>Showing {courses.length} of {pagination.totalItems} courses (Page {pagination.currentPage} of {pagination.totalPages})</>
+                <>
+                  Showing {courses.length} of {pagination.totalItems} courses
+                  (Page {pagination.currentPage} of {pagination.totalPages})
+                </>
               ) : (
                 <>Loading...</>
               )}
@@ -373,7 +356,8 @@ export default function AdminCoursesPage() {
                   <p className="text-sm text-gray-700">
                     Showing{" "}
                     <span className="font-medium">
-                      {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
+                      {(pagination.currentPage - 1) * pagination.itemsPerPage +
+                        1}
                     </span>{" "}
                     to{" "}
                     <span className="font-medium">
@@ -382,31 +366,45 @@ export default function AdminCoursesPage() {
                         pagination.totalItems
                       )}
                     </span>{" "}
-                    of <span className="font-medium">{pagination.totalItems}</span> results
+                    of{" "}
+                    <span className="font-medium">{pagination.totalItems}</span>{" "}
+                    results
                   </p>
                 </div>
                 <div>
-                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <nav
+                    className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                    aria-label="Pagination"
+                  >
                     <button
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={!pagination.hasPreviousPage}
                       className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
-                    
+
                     {/* Page numbers */}
                     {(() => {
                       const totalPages = pagination.totalPages;
                       const current = pagination.currentPage;
                       const pages = [];
-                      
+
                       let startPage = Math.max(1, current - 2);
                       let endPage = Math.min(totalPages, current + 2);
-                      
+
                       // Adjust range to show 5 pages when possible
                       if (endPage - startPage < 4) {
                         if (startPage === 1) {
@@ -415,7 +413,7 @@ export default function AdminCoursesPage() {
                           startPage = Math.max(1, endPage - 4);
                         }
                       }
-                      
+
                       for (let i = startPage; i <= endPage; i++) {
                         const isActive = i === current;
                         pages.push(
@@ -432,18 +430,27 @@ export default function AdminCoursesPage() {
                           </button>
                         );
                       }
-                      
+
                       return pages;
                     })()}
-                    
+
                     <button
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={!pagination.hasNextPage}
                       className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
                   </nav>

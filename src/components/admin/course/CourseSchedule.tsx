@@ -2,8 +2,8 @@
 
 import React from "react";
 import { CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
-import { CourseSchedule } from "@/src/services/courseService";
 import Link from "next/link";
+import { CourseSchedule } from "@/src/services/scheduleService";
 
 interface CourseScheduleProps {
   schedule: CourseSchedule[];
@@ -165,11 +165,6 @@ export default function CourseSchedulePage({ schedule }: CourseScheduleProps) {
                           View
                         </button>
                       </Link>
-                      {(scheduleItem.enrolled_students?.length || 0) > 0 && (
-                        <button className="text-green-600 hover:text-green-900">
-                          Students
-                        </button>
-                      )}
                     </td>
                   </tr>
                 );

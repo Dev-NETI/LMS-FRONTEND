@@ -60,40 +60,6 @@ export interface AdminCoursesResponse {
   message: string;
 }
 
-export interface CourseSchedule {
-  scheduleid: number;
-  courseid: number;
-  title: string;
-  batchno: string;
-  type: "Lecture" | "Assignment" | "Quiz" | "Exam" | "Workshop" | "Discussion";
-  date: string;
-  startdateformat: string;
-  enddateformat: string;
-  instructor: string;
-  location?: string;
-  description?: string;
-  status: "Scheduled" | "Completed" | "Cancelled";
-  attendees?: number;
-  maxAttendees?: number;
-  total_enrolled?: number;
-  active_enrolled?: number;
-  enrolled_students?: EnrolledStudent[];
-}
-
-export interface EnrolledStudent {
-  enrollment_id: number;
-  trainee_id: number;
-  trainee_name: string;
-  date_registered: string;
-  status: string;
-}
-
-export interface CourseScheduleResponse {
-  success: boolean;
-  data: CourseSchedule[];
-  message: string;
-}
-
 export const getEnrolledCourses = async (): Promise<EnrolledCoursesResponse> => {
   try {
     const response = await api.get('/api/trainee/enrolled-courses');
@@ -128,16 +94,6 @@ export const getCourseById = async (id: number): Promise<{ success: boolean; dat
     return response.data;
   } catch (error) {
     console.error('Error fetching course:', error);
-    throw error;
-  }
-};
-
-export const getCourseSchedule = async (id: number): Promise<CourseScheduleResponse> => {
-  try {
-    const response = await api.get(`/api/admin/courses-schedule/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching course schedule:', error);
     throw error;
   }
 };

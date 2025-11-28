@@ -10,34 +10,26 @@ import toast from "react-hot-toast";
 import {
   ArrowLeftIcon,
   CalendarIcon,
-  UsersIcon,
   ChartBarIcon,
   MegaphoneIcon,
-  ClockIcon,
-  AcademicCapIcon,
   DocumentTextIcon,
+  UsersIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import AnnouncementFeed from "@/src/components/admin/schedule/AnnouncementFeed";
 import ProgressMonitoring from "@/src/components/admin/schedule/ProgressMonitoring";
 import TrainingMaterials from "@/src/components/admin/schedule/TrainingMaterials";
-
-interface ScheduleDetails {
-  scheduleid: number;
-  batchno: string;
-  courseid: number;
-  coursename: string;
-  modeofdeliveryid: number;
-  startdateformat: string;
-  enddateformat: string;
-  total_enrolled: number;
-  active_enrolled: number;
-  status: "Scheduled" | "In Progress" | "Completed";
-}
+import {
+  CourseSchedule,
+  getCourseScheduleById,
+} from "@/src/services/scheduleService";
+import { getCourseById } from "@/src/services/courseService";
 
 export default function ScheduleDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const [schedule, setSchedule] = useState<ScheduleDetails | null>(null);
+  const [schedule, setSchedule] = useState<CourseSchedule | null>(null);
+  const [courseName, setCourseName] = useState<string>("");
   const [activeTab, setActiveTab] = useState<
     "announcements" | "progress" | "materials"
   >("announcements");
@@ -52,28 +44,29 @@ export default function ScheduleDetailsPage() {
       setError(null);
 
       try {
-        // Mock data - replace with actual API call
-        const mockSchedule: ScheduleDetails = {
-          scheduleid: Number(params.id),
-          batchno: `BATCH-${params.id}`,
-          courseid: 1,
-          coursename: "Maritime Safety Training",
-          modeofdeliveryid: 1,
-          startdateformat: "2024-12-01",
-          enddateformat: "2024-12-15",
-          total_enrolled: 25,
-          active_enrolled: 22,
-          status: "In Progress",
-        };
+        // Fetch course schedule by ID
+        const scheduleResponse = await getCourseScheduleById(Number(params.id));
+        if (scheduleResponse.success && scheduleResponse.data) {
+          // Handle both single object and array responses
+          const scheduleData = Array.isArray(scheduleResponse.data)
+            ? scheduleResponse.data[0]
+            : scheduleResponse.data;
+          setSchedule(scheduleData);
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setSchedule(mockSchedule);
+          console.log("Schedule Data:", scheduleData);
 
-        // Set default active tab based on mode of delivery
-        // For self-paced distance learning (mode 4), only announcements are available
-        if (mockSchedule.modeofdeliveryid === 4) {
-          setActiveTab("announcements");
+          // Set default active tab based on mode of delivery
+          // For self-paced distance learning (mode 4), only announcements are available
+          if (scheduleData.modeofdeliveryid === 4) {
+            setActiveTab("announcements");
+          }
+        } else {
+          setError(
+            scheduleResponse.message || "Failed to fetch schedule details"
+          );
+          toast.error(
+            scheduleResponse.message || "Failed to fetch schedule details"
+          );
         }
       } catch (err) {
         const errorMessage =
@@ -82,6 +75,7 @@ export default function ScheduleDetailsPage() {
             : "Failed to fetch schedule details";
         setError(errorMessage);
         toast.error(errorMessage);
+        console.error("Error fetching schedule:", err);
       } finally {
         setIsLoading(false);
       }
@@ -89,19 +83,6 @@ export default function ScheduleDetailsPage() {
 
     fetchScheduleDetails();
   }, [params.id]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Scheduled":
-        return "bg-blue-100 text-blue-800";
-      case "In Progress":
-        return "bg-yellow-100 text-yellow-800";
-      case "Completed":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const getDurationInDays = (start: string, end: string) => {
     const startDate = new Date(start);
@@ -210,22 +191,19 @@ export default function ScheduleDetailsPage() {
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
                 Back
               </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {schedule.batchno} - {schedule.coursename}
+                  {schedule.batchno} - {schedule.course?.coursename}
                 </h1>
                 <p className="text-gray-600 mt-1">
                   Schedule Details and Training Management
                 </p>
               </div>
             </div>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                schedule.status
-              )}`}
-            >
-              {schedule.status}
-            </span>
           </div>
 
           {/* Stats Cards */}
@@ -233,14 +211,23 @@ export default function ScheduleDetailsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="p-3 bg-blue-100 rounded-lg">
-                  <UsersIcon className="w-6 h-6 text-blue-600" />
+                  <CalendarIcon className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    Active Trainees
+                    Start Date
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {schedule.active_enrolled}/{schedule.total_enrolled}
+                    {schedule.startdateformat
+                      ? new Date(schedule.startdateformat).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          }
+                        )
+                      : "N/A"}
                   </p>
                 </div>
               </div>
@@ -249,16 +236,21 @@ export default function ScheduleDetailsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="p-3 bg-green-100 rounded-lg">
-                  <ClockIcon className="w-6 h-6 text-green-600" />
+                  <CalendarIcon className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Duration</p>
+                  <p className="text-sm font-medium text-gray-600">End Date</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {getDurationInDays(
-                      schedule.startdateformat,
-                      schedule.enddateformat
-                    )}{" "}
-                    days
+                    {schedule.enddateformat
+                      ? new Date(schedule.enddateformat).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          }
+                        )
+                      : "N/A"}
                   </p>
                 </div>
               </div>
@@ -267,27 +259,35 @@ export default function ScheduleDetailsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center">
                 <div className="p-3 bg-purple-100 rounded-lg">
-                  <ChartBarIcon className="w-6 h-6 text-purple-600" />
+                  <ClockIcon className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    Avg Progress
+                  <p className="text-sm font-medium text-gray-600">Duration</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {schedule.startdateformat && schedule.enddateformat
+                      ? getDurationInDays(
+                          schedule.startdateformat,
+                          schedule.enddateformat
+                        )
+                      : "0"}{" "}
+                    days
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">75%</p>
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center">
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <AcademicCapIcon className="w-6 h-6 text-yellow-600" />
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <UsersIcon className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    Attendance Rate
+                    Total Enrolled
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">92%</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {schedule.total_enrolled || 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function ScheduleDetailsPage() {
               </button>
 
               {/* Only show Progress Monitoring if mode of delivery is NOT 4 (self-paced distance learning) */}
-              {schedule.modeofdeliveryid === 4 && (
+              {schedule.modeofdeliveryid !== 4 && (
                 <button
                   onClick={() => setActiveTab("progress")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
@@ -335,7 +335,6 @@ export default function ScheduleDetailsPage() {
                 <DocumentTextIcon className="w-5 h-5 mr-2" />
                 Training Materials
               </button>
-
             </nav>
           </div>
 
@@ -351,7 +350,6 @@ export default function ScheduleDetailsPage() {
           {activeTab === "materials" && (
             <TrainingMaterials scheduleId={schedule.scheduleid} />
           )}
-
         </div>
       </AdminLayout>
     </AuthGuard>
