@@ -4,6 +4,7 @@ export interface AnnouncementPost {
   id: number;
   schedule_id: number;
   created_by_user_id?: number;
+  user_type?: 'admin' | 'trainee';
   title: string;
   content: string;
   is_active: boolean;
@@ -17,11 +18,16 @@ export interface AnnouncementPost {
 }
 
 export interface AnnouncementUser {
-  user_id: number;
-  f_name: string;
+  id?: number;
+  user_id?: number;
+  traineeid?: number;
+  name?: string;
+  f_name?: string;
   m_name?: string;
   l_name?: string;
   suffix?: string;
+  email?: string;
+  user_type: 'admin' | 'trainee';
 }
 
 export interface ScheduleData {
@@ -31,9 +37,29 @@ export interface ScheduleData {
 
 export interface ReplyData {
   id: number;
+  announcement_id: number;
+  user_id: number;
+  user_type?: 'admin' | 'trainee';
   content: string;
+  is_active?: boolean;
   created_at: string;
+  updated_at?: string;
   user?: AnnouncementUser;
+}
+
+export interface ReplyResponse {
+  announcement: AnnouncementPost;
+  replies: {
+    data: ReplyData[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export interface CreateReplyData {
+  content: string;
 }
 
 export interface AnnouncementResponse {
@@ -55,27 +81,6 @@ export interface CreateAnnouncementData {
 export const getAnnouncementsBySchedule = async (scheduleId: number): Promise<{ schedule: ScheduleData; announcements: AnnouncementPost[] }> => {
   try {
     const response = await api.get(`/api/admin/schedules/${scheduleId}/announcements`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching announcements:', error);
-    throw error;
-  }
-};
-
-export const getAllAnnouncements = async (params?: {
-  schedule_id?: number;
-  active_only?: boolean;
-  with_replies?: boolean;
-  per_page?: number;
-}): Promise<AnnouncementResponse> => {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params?.schedule_id) queryParams.append('schedule_id', params.schedule_id.toString());
-    if (params?.active_only !== undefined) queryParams.append('active_only', params.active_only.toString());
-    if (params?.with_replies !== undefined) queryParams.append('with_replies', params.with_replies.toString());
-    if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
-    
-    const response = await api.get(`/api/announcements?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching announcements:', error);
@@ -105,7 +110,7 @@ export const getAnnouncementById = async (id: number): Promise<AnnouncementPost>
 
 export const updateAnnouncement = async (id: number, data: Partial<CreateAnnouncementData>): Promise<{ message: string; announcement: AnnouncementPost }> => {
   try {
-    const response = await api.put(`/api/announcements/${id}`, data);
+    const response = await api.put(`/api/admin/announcements/${id}`, data);
     return response.data;
   } catch (error) {
     console.error('Error updating announcement:', error);
@@ -115,7 +120,7 @@ export const updateAnnouncement = async (id: number, data: Partial<CreateAnnounc
 
 export const deleteAnnouncement = async (id: number): Promise<{ message: string }> => {
   try {
-    const response = await api.delete(`/api/announcements/${id}`);
+    const response = await api.delete(`/api/admin/announcements/${id}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting announcement:', error);
@@ -125,10 +130,61 @@ export const deleteAnnouncement = async (id: number): Promise<{ message: string 
 
 export const toggleAnnouncementActive = async (id: number): Promise<{ message: string; announcement: AnnouncementPost }> => {
   try {
-    const response = await api.patch(`/api/announcements/${id}/toggle-active`);
+    const response = await api.patch(`/api/admin/announcements/${id}/toggle-active`);
     return response.data;
   } catch (error) {
     console.error('Error toggling announcement status:', error);
+    throw error;
+  }
+};
+
+// Reply functions
+export const getAnnouncementReplies = async (announcementId: number, activeOnly: boolean = true): Promise<ReplyResponse> => {
+  try {
+    const response = await api.get(`/api/admin/announcements/${announcementId}/replies?active_only=${activeOnly}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching announcement replies:', error);
+    throw error;
+  }
+};
+
+export const createAnnouncementReply = async (announcementId: number, data: CreateReplyData): Promise<{ message: string; reply: ReplyData }> => {
+  try {
+    const response = await api.post(`/api/admin/announcements/${announcementId}/replies`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating reply:', error);
+    throw error;
+  }
+};
+
+export const updateAnnouncementReply = async (replyId: number, data: CreateReplyData): Promise<{ message: string; reply: ReplyData }> => {
+  try {
+    const response = await api.put(`/api/admin/replies/${replyId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating reply:', error);
+    throw error;
+  }
+};
+
+export const deleteAnnouncementReply = async (replyId: number): Promise<{ message: string }> => {
+  try {
+    const response = await api.delete(`/api/admin/replies/${replyId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting reply:', error);
+    throw error;
+  }
+};
+
+export const toggleReplyActive = async (replyId: number): Promise<{ message: string; reply: ReplyData }> => {
+  try {
+    const response = await api.patch(`/api/admin/replies/${replyId}/toggle-active`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling reply status:', error);
     throw error;
   }
 };
