@@ -14,6 +14,7 @@ import {
   AnnouncementPost,
   CreateAnnouncementData,
 } from "@/src/services/announcementService";
+import { authService } from "@/src/services/authService";
 
 interface AnnouncementFeedProps {
   scheduleId: number;
@@ -40,6 +41,8 @@ export default function AnnouncementFeed({
 
       setIsLoading(true);
       try {
+        // Ensure CSRF is initialized before making requests
+        await authService.initCSRF();
         const response = await getAnnouncementsBySchedule(scheduleId);
         setAnnouncements(response.announcements || []);
       } catch (error) {
@@ -58,6 +61,9 @@ export default function AnnouncementFeed({
 
     setIsCreating(true);
     try {
+      // Ensure CSRF is initialized before making POST request
+      await authService.initCSRF();
+      
       const createData: CreateAnnouncementData = {
         schedule_id: scheduleId,
         title: newAnnouncement.title,

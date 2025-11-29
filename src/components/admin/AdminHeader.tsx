@@ -12,7 +12,6 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { Button } from "@/src/components/ui/button";
 import toast from "react-hot-toast";
 
 interface AdminHeaderProps {
@@ -21,10 +20,7 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const { user, logout } = useAuth();
-  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  console.log("user:", user);
 
   const handleLogout = async () => {
     try {

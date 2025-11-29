@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import Cookies from "js-cookie";
-import api, { initializeCSRF } from "@/lib/api";
+import { authService } from "@/services/authService";
 import { User, LoginCredentials, AuthContextType } from "@/types/auth";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,12 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Verify the token is still valid by calling /me endpoint
             const userType = userData.user_type;
-            const meEndpoint =
-              userType === "admin" ? "/api/admin/me" : "/api/trainee/me";
-
-            const response = await api.get(meEndpoint);
-            // Update user data with response to ensure it's fresh
-            setUser({ ...userData, ...response.data.user });
+            
+            if (userType === "admin") {
+              const response = await authService.getAdminUser();
+              setUser({ ...userData, ...response.user });
+            } else if (userType === "trainee") {
+              const response = await authService.getTraineeUser();
+              setUser({ ...userData, ...response.user });
+            }
           } catch (verifyError) {
             console.log("Token validation failed, clearing stored data");
             Cookies.remove("auth_token");
@@ -53,21 +55,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      const response = await api.post("/api/trainee/login", credentials);
-      const { token: authToken, user: userData } = response.data;
+      const response = await authService.loginTrainee(credentials.email, credentials.password);
+      const { token: authToken, user: userData } = response;
 
       // Add user_type to distinguish trainee from admin
       const userWithType = { ...userData, user_type: "trainee" as const };
-
+      
       setToken(authToken);
       setUser(userWithType);
 
-      // Store token and user in cookies
-      Cookies.set("auth_token", authToken, {
-        expires: 7,
-        secure: false,
-        sameSite: "lax",
-      });
+      // Store user data (token already stored by authService)
       Cookies.set("user", JSON.stringify(userWithType), {
         expires: 7,
         secure: false,
@@ -80,21 +77,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginAdmin = async (credentials: LoginCredentials) => {
     try {
-      const response = await api.post("/api/admin/login", credentials);
-      const { token: authToken, user: userData } = response.data;
+      const response = await authService.loginAdmin(credentials.email, credentials.password);
+      const { user: userData } = response;
 
       // Add user_type to distinguish admin from trainee
       const userWithType = { ...userData, user_type: "admin" as const };
-
-      setToken(authToken);
       setUser(userWithType);
 
-      // Store token and user in cookies
-      Cookies.set("auth_token", authToken, {
-        expires: 7,
-        secure: false,
-        sameSite: "lax",
-      });
+      // Store user data (session handled by Laravel)
       Cookies.set("user", JSON.stringify(userWithType), {
         expires: 7,
         secure: false,
@@ -110,34 +100,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Use provided userType or detect from current user
       const effectiveUserType = userType || user?.user_type;
 
-      // Determine logout endpoint based on user type
+      // Call appropriate logout endpoint
       if (effectiveUserType === "admin") {
-        await api.post("/api/admin/logout");
+        await authService.logoutAdmin();
       } else if (effectiveUserType === "trainee") {
-        await api.post("/api/trainee/logout");
-      } else {
-        // Fallback: try both endpoints if user type is unknown
-        try {
-          await api.post("/api/admin/logout");
-        } catch (adminError) {
-          try {
-            await api.post("/api/trainee/logout");
-          } catch (traineeError) {
-            console.log(
-              "Logout from both endpoints failed, proceeding with client-side cleanup"
-            );
-          }
-        }
+        await authService.logoutTrainee();
       }
     } catch (error) {
       console.error("Error during logout:", error);
     } finally {
       setUser(null);
       setToken(null);
-      Cookies.remove("auth_token");
       Cookies.remove("user");
 
-      // Redirect based on current path, provided userType, or detected user type
+      // Redirect based on current path or user type
       const currentPath = window.location.pathname;
       const effectiveUserType = userType || user?.user_type;
 
@@ -156,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loginAdmin,
     logout,
     loading,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

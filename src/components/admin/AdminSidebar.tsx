@@ -157,7 +157,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         )}
       >
         <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm"
           onClick={onClose}
         />
       </div>
