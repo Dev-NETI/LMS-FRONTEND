@@ -43,17 +43,35 @@ export default function AnnouncementFeed({
     content: "",
   });
   const [showNewAnnouncementForm, setShowNewAnnouncementForm] = useState(false);
-  const [showReplies, setShowReplies] = useState<{ [key: number]: boolean }>({});
-  const [replyContent, setReplyContent] = useState<{ [key: number]: string }>({});
-  const [loadingReplies, setLoadingReplies] = useState<{ [key: number]: boolean }>({});
-  const [creatingReply, setCreatingReply] = useState<{ [key: number]: boolean }>({});
+  const [showReplies, setShowReplies] = useState<{ [key: number]: boolean }>(
+    {}
+  );
+  const [replyContent, setReplyContent] = useState<{ [key: number]: string }>(
+    {}
+  );
+  const [loadingReplies, setLoadingReplies] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [creatingReply, setCreatingReply] = useState<{
+    [key: number]: boolean;
+  }>({});
   const [replies, setReplies] = useState<{ [key: number]: ReplyData[] }>({});
-  const [editingReply, setEditingReply] = useState<{ [key: number]: boolean }>({});
+  const [editingReply, setEditingReply] = useState<{ [key: number]: boolean }>(
+    {}
+  );
   const [editContent, setEditContent] = useState<{ [key: number]: string }>({});
-  const [deletingReply, setDeletingReply] = useState<{ [key: number]: boolean }>({});
-  const [editingAnnouncement, setEditingAnnouncement] = useState<{ [key: number]: boolean }>({});
-  const [editAnnouncementData, setEditAnnouncementData] = useState<{ [key: number]: { title: string; content: string } }>({});
-  const [deletingAnnouncement, setDeletingAnnouncement] = useState<{ [key: number]: boolean }>({});
+  const [deletingReply, setDeletingReply] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [editingAnnouncement, setEditingAnnouncement] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [editAnnouncementData, setEditAnnouncementData] = useState<{
+    [key: number]: { title: string; content: string };
+  }>({});
+  const [deletingAnnouncement, setDeletingAnnouncement] = useState<{
+    [key: number]: boolean;
+  }>({});
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -83,7 +101,7 @@ export default function AnnouncementFeed({
     try {
       // Ensure CSRF is initialized before making POST request
       await authService.initCSRF();
-      
+
       const createData: CreateAnnouncementData = {
         schedule_id: scheduleId,
         title: newAnnouncement.title,
@@ -107,34 +125,36 @@ export default function AnnouncementFeed({
     f_name?: string;
     m_name?: string;
     l_name?: string;
-    user_type?: 'admin' | 'trainee';
+    user_type?: "admin" | "trainee";
   }) => {
     if (!user) return "Unknown User";
-    
+
     // For admin users, they might have a 'name' field
-    if (user.user_type === 'admin' && user.name) {
+    if (user.user_type === "admin" && user.name) {
       return user.name;
     }
-    
+
     // For trainee users or admin users with separate name fields
     const firstName = user.f_name || "";
     const middleInitial = user.m_name ? ` ${user.m_name.charAt(0)}.` : "";
     const lastName = user.l_name ? ` ${user.l_name}` : "";
     const fullName = `${firstName}${middleInitial}${lastName}`.trim();
-    
+
     return fullName || user.name || "Unknown User";
   };
 
-  const getUserBadge = (userType?: 'admin' | 'trainee') => {
+  const getUserBadge = (userType?: "admin" | "trainee") => {
     if (!userType) return null;
-    
+
     return (
-      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-        userType === 'admin' 
-          ? 'bg-blue-100 text-blue-700' 
-          : 'bg-green-100 text-green-700'
-      }`}>
-        {userType === 'admin' ? 'Admin' : 'Trainee'}
+      <span
+        className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+          userType === "admin"
+            ? "bg-blue-100 text-blue-700"
+            : "bg-green-100 text-green-700"
+        }`}
+      >
+        {userType === "admin" ? "Admin" : "Trainee"}
       </span>
     );
   };
@@ -173,23 +193,23 @@ export default function AnnouncementFeed({
     setCreatingReply({ ...creatingReply, [announcementId]: true });
     try {
       await authService.initCSRF();
-      
+
       const replyData: CreateReplyData = {
         content: content.trim(),
       };
 
       const response = await createAnnouncementReply(announcementId, replyData);
-      
+
       const currentReplies = replies[announcementId] || [];
       setReplies({
         ...replies,
         [announcementId]: [...currentReplies, response.reply],
       });
-      
+
       setReplyContent({ ...replyContent, [announcementId]: "" });
-      
-      setAnnouncements(prev =>
-        prev.map(announcement =>
+
+      setAnnouncements((prev) =>
+        prev.map((announcement) =>
           announcement.id === announcementId
             ? {
                 ...announcement,
@@ -221,20 +241,20 @@ export default function AnnouncementFeed({
 
     try {
       await authService.initCSRF();
-      
+
       const updateData: CreateReplyData = {
         content: content.trim(),
       };
 
       const response = await updateAnnouncementReply(replyId, updateData);
-      
-      setReplies(prev => ({
+
+      setReplies((prev) => ({
         ...prev,
-        [announcementId]: prev[announcementId].map(reply =>
+        [announcementId]: prev[announcementId].map((reply) =>
           reply.id === replyId ? response.reply : reply
         ),
       }));
-      
+
       setEditingReply({ ...editingReply, [replyId]: false });
       setEditContent({ ...editContent, [replyId]: "" });
     } catch (error) {
@@ -249,18 +269,23 @@ export default function AnnouncementFeed({
     try {
       await authService.initCSRF();
       await deleteAnnouncementReply(replyId);
-      
-      setReplies(prev => ({
+
+      setReplies((prev) => ({
         ...prev,
-        [announcementId]: prev[announcementId].filter(reply => reply.id !== replyId),
+        [announcementId]: prev[announcementId].filter(
+          (reply) => reply.id !== replyId
+        ),
       }));
-      
-      setAnnouncements(prev =>
-        prev.map(announcement =>
+
+      setAnnouncements((prev) =>
+        prev.map((announcement) =>
           announcement.id === announcementId
             ? {
                 ...announcement,
-                replies_count: Math.max((announcement.replies_count || 1) - 1, 0),
+                replies_count: Math.max(
+                  (announcement.replies_count || 1) - 1,
+                  0
+                ),
               }
             : announcement
         )
@@ -277,7 +302,11 @@ export default function AnnouncementFeed({
   };
 
   const canEditAnnouncement = (announcement: AnnouncementPost) => {
-    return user && (user.id === announcement.created_by_user_id || user.user_type === "admin");
+    return (
+      user &&
+      (user.id === announcement.created_by_user_id ||
+        user.user_type === "admin")
+    );
   };
 
   const handleEditAnnouncement = (announcement: AnnouncementPost) => {
@@ -293,9 +322,9 @@ export default function AnnouncementFeed({
 
   const handleCancelEditAnnouncement = (announcementId: number) => {
     setEditingAnnouncement({ ...editingAnnouncement, [announcementId]: false });
-    setEditAnnouncementData({ 
-      ...editAnnouncementData, 
-      [announcementId]: { title: "", content: "" } 
+    setEditAnnouncementData({
+      ...editAnnouncementData,
+      [announcementId]: { title: "", content: "" },
     });
   };
 
@@ -305,24 +334,29 @@ export default function AnnouncementFeed({
 
     try {
       await authService.initCSRF();
-      
+
       const updateData: Partial<CreateAnnouncementData> = {
         title: data.title.trim(),
         content: data.content.trim(),
       };
 
       const response = await updateAnnouncement(announcementId, updateData);
-      
-      setAnnouncements(prev =>
-        prev.map(announcement =>
-          announcement.id === announcementId ? response.announcement : announcement
+
+      setAnnouncements((prev) =>
+        prev.map((announcement) =>
+          announcement.id === announcementId
+            ? response.announcement
+            : announcement
         )
       );
-      
-      setEditingAnnouncement({ ...editingAnnouncement, [announcementId]: false });
-      setEditAnnouncementData({ 
-        ...editAnnouncementData, 
-        [announcementId]: { title: "", content: "" } 
+
+      setEditingAnnouncement({
+        ...editingAnnouncement,
+        [announcementId]: false,
+      });
+      setEditAnnouncementData({
+        ...editAnnouncementData,
+        [announcementId]: { title: "", content: "" },
       });
     } catch (error) {
       console.error("Failed to update announcement:", error);
@@ -330,15 +364,25 @@ export default function AnnouncementFeed({
   };
 
   const handleDeleteAnnouncement = async (announcementId: number) => {
-    if (!confirm("Are you sure you want to delete this announcement? This action cannot be undone.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this announcement? This action cannot be undone."
+      )
+    )
+      return;
 
-    setDeletingAnnouncement({ ...deletingAnnouncement, [announcementId]: true });
+    setDeletingAnnouncement({
+      ...deletingAnnouncement,
+      [announcementId]: true,
+    });
     try {
       await authService.initCSRF();
       await deleteAnnouncement(announcementId);
-      
-      setAnnouncements(prev => prev.filter(announcement => announcement.id !== announcementId));
-      
+
+      setAnnouncements((prev) =>
+        prev.filter((announcement) => announcement.id !== announcementId)
+      );
+
       // Clear any related replies from state
       if (replies[announcementId]) {
         const newReplies = { ...replies };
@@ -348,7 +392,10 @@ export default function AnnouncementFeed({
     } catch (error) {
       console.error("Failed to delete announcement:", error);
     } finally {
-      setDeletingAnnouncement({ ...deletingAnnouncement, [announcementId]: false });
+      setDeletingAnnouncement({
+        ...deletingAnnouncement,
+        [announcementId]: false,
+      });
     }
   };
 
@@ -433,9 +480,13 @@ export default function AnnouncementFeed({
               className="w-full p-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"
             />
             <div className="flex gap-2">
-              <Button 
-                onClick={handleCreateAnnouncement} 
-                disabled={isCreating || !newAnnouncement.title.trim() || !newAnnouncement.content.trim()}
+              <Button
+                onClick={handleCreateAnnouncement}
+                disabled={
+                  isCreating ||
+                  !newAnnouncement.title.trim() ||
+                  !newAnnouncement.content.trim()
+                }
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700 text-white text-sm"
               >
@@ -472,7 +523,9 @@ export default function AnnouncementFeed({
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium text-gray-900 text-sm">{getAuthorName(announcement.created_by_user)}</span>
+                    <span className="font-medium text-gray-900 text-sm">
+                      {getAuthorName(announcement.created_by_user)}
+                    </span>
                     {getUserBadge(announcement.created_by_user?.user_type)}
                   </div>
                   <div className="flex items-center space-x-1 text-xs text-gray-500">
@@ -483,12 +536,13 @@ export default function AnnouncementFeed({
                           ""
                       )}
                     </span>
-                    {announcement.updated_at && announcement.updated_at !== announcement.created_at && (
-                      <>
-                        <span>•</span>
-                        <span>edited</span>
-                      </>
-                    )}
+                    {announcement.updated_at &&
+                      announcement.updated_at !== announcement.created_at && (
+                        <>
+                          <span>•</span>
+                          <span>edited</span>
+                        </>
+                      )}
                   </div>
                 </div>
               </div>
@@ -497,7 +551,10 @@ export default function AnnouncementFeed({
                   <button
                     onClick={() => handleEditAnnouncement(announcement)}
                     className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors duration-200"
-                    disabled={editingAnnouncement[announcement.id] || deletingAnnouncement[announcement.id]}
+                    disabled={
+                      editingAnnouncement[announcement.id] ||
+                      deletingAnnouncement[announcement.id]
+                    }
                     title="Edit announcement"
                   >
                     <PencilIcon className="w-4 h-4" />
@@ -505,7 +562,10 @@ export default function AnnouncementFeed({
                   <button
                     onClick={() => handleDeleteAnnouncement(announcement.id)}
                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
-                    disabled={editingAnnouncement[announcement.id] || deletingAnnouncement[announcement.id]}
+                    disabled={
+                      editingAnnouncement[announcement.id] ||
+                      deletingAnnouncement[announcement.id]
+                    }
                     title="Delete announcement"
                   >
                     <TrashIcon className="w-4 h-4" />
@@ -562,7 +622,9 @@ export default function AnnouncementFeed({
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => handleCancelEditAnnouncement(announcement.id)}
+                      onClick={() =>
+                        handleCancelEditAnnouncement(announcement.id)
+                      }
                       size="sm"
                       className="text-sm"
                     >
@@ -598,7 +660,11 @@ export default function AnnouncementFeed({
                       {announcement.replies_count ||
                         replies[announcement.id]?.length ||
                         0}{" "}
-                      {(announcement.replies_count || replies[announcement.id]?.length || 0) === 1 ? 'reply' : 'replies'}
+                      {(announcement.replies_count ||
+                        replies[announcement.id]?.length ||
+                        0) === 1
+                        ? "reply"
+                        : "replies"}
                     </>
                   )}
                 </span>
@@ -609,96 +675,125 @@ export default function AnnouncementFeed({
             {showReplies[announcement.id] && (
               <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
                 {/* Existing Replies */}
-                {replies[announcement.id] && replies[announcement.id].length > 0 && (
-                  <div className="space-y-3">
-                    {replies[announcement.id].map((reply) => (
-                      <div key={reply.id} className="flex items-start space-x-3 pb-3">
-                        <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">
-                            {getAuthorName(reply.user).charAt(0)}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2 text-xs">
-                              <span className="font-medium text-gray-900">{getAuthorName(reply.user)}</span>
-                              {getUserBadge(reply.user?.user_type)}
-                              <span className="text-gray-400">•</span>
-                              <span className="text-gray-500">{formatDate(reply.created_at)}</span>
-                              {reply.updated_at && reply.updated_at !== reply.created_at && (
-                                <>
-                                  <span className="text-gray-400">•</span>
-                                  <span className="text-blue-600">edited</span>
-                                </>
+                {replies[announcement.id] &&
+                  replies[announcement.id].length > 0 && (
+                    <div className="space-y-3">
+                      {replies[announcement.id].map((reply) => (
+                        <div
+                          key={reply.id}
+                          className="flex items-start space-x-3 pb-3"
+                        >
+                          <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-medium">
+                              {getAuthorName(reply.user).charAt(0)}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2 text-xs">
+                                <span className="font-medium text-gray-900">
+                                  {getAuthorName(reply.user)}
+                                </span>
+                                {getUserBadge(reply.user?.user_type)}
+                                <span className="text-gray-400">•</span>
+                                <span className="text-gray-500">
+                                  {formatDate(reply.created_at)}
+                                </span>
+                                {reply.updated_at &&
+                                  reply.updated_at !== reply.created_at && (
+                                    <>
+                                      <span className="text-gray-400">•</span>
+                                      <span className="text-blue-600">
+                                        edited
+                                      </span>
+                                    </>
+                                  )}
+                              </div>
+                              {canEditReply(reply) && (
+                                <div className="flex items-center space-x-1">
+                                  <button
+                                    onClick={() =>
+                                      handleEditReply(reply.id, reply.content)
+                                    }
+                                    className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors"
+                                    disabled={
+                                      editingReply[reply.id] ||
+                                      deletingReply[reply.id]
+                                    }
+                                  >
+                                    <PencilIcon className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteReply(
+                                        reply.id,
+                                        announcement.id
+                                      )
+                                    }
+                                    className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
+                                    disabled={
+                                      editingReply[reply.id] ||
+                                      deletingReply[reply.id]
+                                    }
+                                  >
+                                    <TrashIcon className="w-3 h-3" />
+                                  </button>
+                                </div>
                               )}
                             </div>
-                            {canEditReply(reply) && (
-                              <div className="flex items-center space-x-1">
-                                <button
-                                  onClick={() => handleEditReply(reply.id, reply.content)}
-                                  className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors"
-                                  disabled={editingReply[reply.id] || deletingReply[reply.id]}
-                                >
-                                  <PencilIcon className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteReply(reply.id, announcement.id)}
-                                  className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
-                                  disabled={editingReply[reply.id] || deletingReply[reply.id]}
-                                >
-                                  <TrashIcon className="w-3 h-3" />
-                                </button>
+                            {editingReply[reply.id] ? (
+                              <div className="mt-2 space-y-2">
+                                <textarea
+                                  value={editContent[reply.id] || ""}
+                                  onChange={(e) =>
+                                    setEditContent({
+                                      ...editContent,
+                                      [reply.id]: e.target.value,
+                                    })
+                                  }
+                                  rows={2}
+                                  className="w-full p-2 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-blue-500 resize-none"
+                                />
+                                <div className="flex gap-1">
+                                  <Button
+                                    onClick={() =>
+                                      handleUpdateReply(
+                                        reply.id,
+                                        announcement.id
+                                      )
+                                    }
+                                    disabled={!editContent[reply.id]?.trim()}
+                                    size="sm"
+                                    className="text-xs h-6 px-2"
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => handleCancelEdit(reply.id)}
+                                    size="sm"
+                                    className="text-xs h-6 px-2"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
                               </div>
+                            ) : (
+                              <p className="text-gray-700 text-xs mt-1 leading-relaxed">
+                                {reply.content}
+                              </p>
                             )}
                           </div>
-                          {editingReply[reply.id] ? (
-                            <div className="mt-2 space-y-2">
-                              <textarea
-                                value={editContent[reply.id] || ""}
-                                onChange={(e) =>
-                                  setEditContent({
-                                    ...editContent,
-                                    [reply.id]: e.target.value,
-                                  })
-                                }
-                                rows={2}
-                                className="w-full p-2 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-blue-500 resize-none"
-                              />
-                              <div className="flex gap-1">
-                                <Button
-                                  onClick={() => handleUpdateReply(reply.id, announcement.id)}
-                                  disabled={!editContent[reply.id]?.trim()}
-                                  size="sm"
-                                  className="text-xs h-6 px-2"
-                                >
-                                  Save
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => handleCancelEdit(reply.id)}
-                                  size="sm"
-                                  className="text-xs h-6 px-2"
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-gray-700 text-xs mt-1 leading-relaxed">
-                              {reply.content}
-                            </p>
-                          )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
 
                 {/* Reply Form */}
                 <div className="flex items-start space-x-3">
                   <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-medium">
-                      {user?.f_name?.charAt(0) || user?.name?.charAt(0) || 'Y'}
+                      {user?.f_name?.charAt(0) || user?.name?.charAt(0) || "Y"}
                     </span>
                   </div>
                   <div className="flex-1">
@@ -725,7 +820,9 @@ export default function AnnouncementFeed({
                         size="sm"
                         className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-6 px-3"
                       >
-                        {creatingReply[announcement.id] ? "Posting..." : "Reply"}
+                        {creatingReply[announcement.id]
+                          ? "Posting..."
+                          : "Reply"}
                       </Button>
                     </div>
                   </div>

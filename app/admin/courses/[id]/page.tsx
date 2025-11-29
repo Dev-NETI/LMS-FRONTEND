@@ -11,13 +11,13 @@ import { ArrowLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { Skeleton } from "@mui/material";
 import { Course } from "@/src/components/admin/course/types";
 import CourseSchedulePage from "@/src/components/admin/course/CourseSchedule";
-import CourseOverviewPage from "@/src/components/admin/course/CourseOverview";
 import CourseContentPage from "@/src/components/admin/course/CourseContent";
 import CourseTrainingMaterials from "@/src/components/admin/course/CourseTrainingMaterials";
 import {
   CourseSchedule,
   getCourseSchedule,
 } from "@/src/services/scheduleService";
+import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable";
 
 // Transform backend course data to frontend format
 const transformCourseData = (backendCourse: AdminCourse): Course => {
@@ -285,6 +285,7 @@ export default function CourseDetailsPage() {
               >
                 Overview
               </button>
+
               <button
                 onClick={() => setActiveTab("content")}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -295,16 +296,7 @@ export default function CourseDetailsPage() {
               >
                 Content & Syllabus
               </button>
-              <button
-                onClick={() => setActiveTab("schedule")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "schedule"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                Schedule ({schedule.length})
-              </button>
+
               <button
                 onClick={() => setActiveTab("materials")}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -315,13 +307,30 @@ export default function CourseDetailsPage() {
               >
                 Training Materials
               </button>
+
+              <button
+                onClick={() => setActiveTab("schedule")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "schedule"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Schedule ({schedule.length})
+              </button>
             </nav>
           </div>
 
           {/* Tab Content */}
-          {activeTab === "overview" && <CourseOverviewPage course={course} />}
+          {activeTab === "overview" && (
+            <CourseDetailsTable courseId={course.id} />
+          )}
 
           {activeTab === "content" && <CourseContentPage course={course} />}
+
+          {activeTab === "materials" && (
+            <CourseTrainingMaterials courseId={course.id} />
+          )}
 
           {activeTab === "schedule" &&
             (isScheduleLoading ? (
@@ -419,10 +428,6 @@ export default function CourseDetailsPage() {
             ) : (
               <CourseSchedulePage schedule={schedule} />
             ))}
-
-          {activeTab === "materials" && (
-            <CourseTrainingMaterials courseId={course.id} />
-          )}
         </div>
       </AdminLayout>
     </AuthGuard>

@@ -16,9 +16,7 @@ import {
   CloudArrowUpIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import {
-  DocumentIcon as DocumentSolidIcon,
-} from "@heroicons/react/24/solid";
+import { DocumentIcon as DocumentSolidIcon } from "@heroicons/react/24/solid";
 
 interface TrainingMaterial {
   id: number;
@@ -38,13 +36,16 @@ interface CourseTrainingMaterialsProps {
   courseId: number;
 }
 
-export default function CourseTrainingMaterials({ courseId }: CourseTrainingMaterialsProps) {
+export default function CourseTrainingMaterials({
+  courseId,
+}: CourseTrainingMaterialsProps) {
   const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState<TrainingMaterial | null>(null);
+  const [selectedMaterial, setSelectedMaterial] =
+    useState<TrainingMaterial | null>(null);
   const [uploadForm, setUploadForm] = useState({
     title: "",
     description: "",
@@ -63,7 +64,8 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
             id: 1,
             filename: "handout.pdf",
             title: "Maritime Safety Handout",
-            description: "Comprehensive safety procedures and protocols for maritime operations",
+            description:
+              "Comprehensive safety procedures and protocols for maritime operations",
             fileSize: "2.4 MB",
             fileType: "PDF",
             uploadedBy: "Captain Johnson",
@@ -76,7 +78,8 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
             id: 2,
             filename: "emergency_procedures.pdf",
             title: "Emergency Response Manual",
-            description: "Step-by-step emergency procedures for various maritime scenarios",
+            description:
+              "Step-by-step emergency procedures for various maritime scenarios",
             fileSize: "4.1 MB",
             fileType: "PDF",
             uploadedBy: "Safety Officer Brown",
@@ -102,7 +105,8 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
             id: 4,
             filename: "imo_regulations.pdf",
             title: "IMO Safety Regulations Reference",
-            description: "International Maritime Organization safety regulations and guidelines",
+            description:
+              "International Maritime Organization safety regulations and guidelines",
             fileSize: "6.2 MB",
             fileType: "PDF",
             uploadedBy: "Maritime Academy",
@@ -113,7 +117,7 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
           },
         ];
 
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise((resolve) => setTimeout(resolve, 800));
         setMaterials(mockMaterials);
       } catch (error) {
         console.error("Failed to fetch training materials:", error);
@@ -155,9 +159,10 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
     }
   };
 
-  const filteredMaterials = selectedCategory === "all" 
-    ? materials 
-    : materials.filter(material => material.category === selectedCategory);
+  const filteredMaterials =
+    selectedCategory === "all"
+      ? materials
+      : materials.filter((material) => material.category === selectedCategory);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -172,13 +177,11 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
   const handleDownload = (material: TrainingMaterial) => {
     // Mock download functionality
     console.log(`Downloading ${material.filename}`);
-    
+
     // Update download count
-    setMaterials(prev => 
-      prev.map(m => 
-        m.id === material.id 
-          ? { ...m, downloadCount: m.downloadCount + 1 }
-          : m
+    setMaterials((prev) =>
+      prev.map((m) =>
+        m.id === material.id ? { ...m, downloadCount: m.downloadCount + 1 } : m
       )
     );
   };
@@ -197,7 +200,7 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
 
   const handleDelete = (materialId: number) => {
     if (window.confirm("Are you sure you want to delete this material?")) {
-      setMaterials(prev => prev.filter(m => m.id !== materialId));
+      setMaterials((prev) => prev.filter((m) => m.id !== materialId));
     }
   };
 
@@ -210,7 +213,7 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
       title: uploadForm.title,
       description: uploadForm.description,
       fileSize: `${(uploadForm.file.size / 1024 / 1024).toFixed(1)} MB`,
-      fileType: uploadForm.file.name.split('.').pop()?.toUpperCase() || "FILE",
+      fileType: uploadForm.file.name.split(".").pop()?.toUpperCase() || "FILE",
       uploadedBy: "Current User",
       uploadedAt: new Date().toISOString(),
       category: uploadForm.category,
@@ -218,7 +221,7 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
       isRequired: uploadForm.isRequired,
     };
 
-    setMaterials(prev => [newMaterial, ...prev]);
+    setMaterials((prev) => [newMaterial, ...prev]);
     setShowUploadModal(false);
     setUploadForm({
       title: "",
@@ -232,8 +235,8 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
   const handleUpdate = () => {
     if (!selectedMaterial || !uploadForm.title) return;
 
-    setMaterials(prev =>
-      prev.map(m =>
+    setMaterials((prev) =>
+      prev.map((m) =>
         m.id === selectedMaterial.id
           ? {
               ...m,
@@ -243,9 +246,13 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
               isRequired: uploadForm.isRequired,
               ...(uploadForm.file && {
                 filename: uploadForm.file.name,
-                fileSize: `${(uploadForm.file.size / 1024 / 1024).toFixed(1)} MB`,
-                fileType: uploadForm.file.name.split('.').pop()?.toUpperCase() || "FILE",
-              })
+                fileSize: `${(uploadForm.file.size / 1024 / 1024).toFixed(
+                  1
+                )} MB`,
+                fileType:
+                  uploadForm.file.name.split(".").pop()?.toUpperCase() ||
+                  "FILE",
+              }),
             }
           : m
       )
@@ -272,13 +279,21 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
 
         <div className="flex gap-2">
           {Array.from({ length: 5 }).map((_, index) => (
-            <Skeleton key={index} variant="rectangular" width={80} height={32} />
+            <Skeleton
+              key={index}
+              variant="rectangular"
+              width={80}
+              height={32}
+            />
           ))}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
+            <div
+              key={index}
+              className="bg-white rounded-lg border border-gray-200 p-6"
+            >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Skeleton variant="rounded" width={40} height={40} />
@@ -306,12 +321,14 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Training Materials</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Training Materials
+          </h2>
           <p className="text-sm text-gray-600 mt-1">
             Manage course handouts, manuals, and reference materials
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => setShowUploadModal(true)}
           className="flex items-center"
         >
@@ -340,7 +357,7 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Handouts ({materials.filter(m => m.category === "handout").length})
+          Handouts ({materials.filter((m) => m.category === "handout").length})
         </button>
         <button
           onClick={() => setSelectedCategory("manual")}
@@ -350,7 +367,7 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Manuals ({materials.filter(m => m.category === "manual").length})
+          Manuals ({materials.filter((m) => m.category === "manual").length})
         </button>
         <button
           onClick={() => setSelectedCategory("exercise")}
@@ -360,7 +377,8 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Exercises ({materials.filter(m => m.category === "exercise").length})
+          Exercises ({materials.filter((m) => m.category === "exercise").length}
+          )
         </button>
         <button
           onClick={() => setSelectedCategory("reference")}
@@ -370,14 +388,18 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Reference ({materials.filter(m => m.category === "reference").length})
+          Reference (
+          {materials.filter((m) => m.category === "reference").length})
         </button>
       </div>
 
       {/* Materials Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMaterials.map((material) => (
-          <div key={material.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+          <div
+            key={material.id}
+            className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+          >
             {/* Header */}
             <div className="p-6 pb-4">
               <div className="flex items-start justify-between mb-3">
@@ -423,8 +445,13 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
 
               {/* Category Badge */}
               <div className="mb-3">
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(material.category)}`}>
-                  {material.category.charAt(0).toUpperCase() + material.category.slice(1)}
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(
+                    material.category
+                  )}`}
+                >
+                  {material.category.charAt(0).toUpperCase() +
+                    material.category.slice(1)}
                 </span>
               </div>
 
@@ -435,7 +462,9 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
 
               {/* File Info */}
               <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                <span>{material.fileType} • {material.fileSize}</span>
+                <span>
+                  {material.fileType} • {material.fileSize}
+                </span>
                 <span>{material.downloadCount} downloads</span>
               </div>
             </div>
@@ -486,10 +515,9 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
             No materials found
           </h3>
           <p className="text-gray-600 mb-4">
-            {selectedCategory === "all" 
-              ? "No training materials have been uploaded yet." 
-              : `No ${selectedCategory} materials found.`
-            }
+            {selectedCategory === "all"
+              ? "No training materials have been uploaded yet."
+              : `No ${selectedCategory} materials found.`}
           </p>
           <Button onClick={() => setShowUploadModal(true)}>
             <PlusIcon className="w-4 h-4 mr-2" />
@@ -500,10 +528,12 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0  bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Upload Training Material</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Upload Training Material
+              </h3>
               <button
                 onClick={() => setShowUploadModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -521,7 +551,10 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <CloudArrowUpIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <div className="text-sm text-gray-600">
-                    <label htmlFor="file-upload" className="cursor-pointer text-blue-600 hover:text-blue-500">
+                    <label
+                      htmlFor="file-upload"
+                      className="cursor-pointer text-blue-600 hover:text-blue-500"
+                    >
                       Upload a file
                     </label>
                     <input
@@ -529,13 +562,22 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                       type="file"
                       className="sr-only"
                       accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                      onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files?.[0] || null })}
+                      onChange={(e) =>
+                        setUploadForm({
+                          ...uploadForm,
+                          file: e.target.files?.[0] || null,
+                        })
+                      }
                     />
-                    <p className="text-xs text-gray-500 mt-1">PDF, DOC, PPT, XLS up to 10MB</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, PPT, XLS up to 10MB
+                    </p>
                   </div>
                 </div>
                 {uploadForm.file && (
-                  <p className="text-sm text-gray-600 mt-1">Selected: {uploadForm.file.name}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Selected: {uploadForm.file.name}
+                  </p>
                 )}
               </div>
 
@@ -547,7 +589,9 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 <input
                   type="text"
                   value={uploadForm.title}
-                  onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                  onChange={(e) =>
+                    setUploadForm({ ...uploadForm, title: e.target.value })
+                  }
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter material title"
                 />
@@ -560,7 +604,12 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 </label>
                 <textarea
                   value={uploadForm.description}
-                  onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setUploadForm({
+                      ...uploadForm,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter material description"
@@ -574,7 +623,12 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 </label>
                 <select
                   value={uploadForm.category}
-                  onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value as any })}
+                  onChange={(e) =>
+                    setUploadForm({
+                      ...uploadForm,
+                      category: e.target.value as any,
+                    })
+                  }
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="handout">Handout</option>
@@ -590,20 +644,34 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                   id="required"
                   type="checkbox"
                   checked={uploadForm.isRequired}
-                  onChange={(e) => setUploadForm({ ...uploadForm, isRequired: e.target.checked })}
+                  onChange={(e) =>
+                    setUploadForm({
+                      ...uploadForm,
+                      isRequired: e.target.checked,
+                    })
+                  }
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="required" className="ml-2 block text-sm text-gray-900">
+                <label
+                  htmlFor="required"
+                  className="ml-2 block text-sm text-gray-900"
+                >
                   Mark as required material
                 </label>
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowUploadModal(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowUploadModal(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleUpload} disabled={!uploadForm.file || !uploadForm.title}>
+              <Button
+                onClick={handleUpload}
+                disabled={!uploadForm.file || !uploadForm.title}
+              >
                 Upload
               </Button>
             </div>
@@ -616,7 +684,9 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Training Material</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Edit Training Material
+              </h3>
               <button
                 onClick={() => setShowEditModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -633,7 +703,10 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                   <div className="text-sm text-gray-600">
-                    <label htmlFor="file-replace" className="cursor-pointer text-blue-600 hover:text-blue-500">
+                    <label
+                      htmlFor="file-replace"
+                      className="cursor-pointer text-blue-600 hover:text-blue-500"
+                    >
                       Choose new file
                     </label>
                     <input
@@ -641,13 +714,22 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                       type="file"
                       className="sr-only"
                       accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                      onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files?.[0] || null })}
+                      onChange={(e) =>
+                        setUploadForm({
+                          ...uploadForm,
+                          file: e.target.files?.[0] || null,
+                        })
+                      }
                     />
-                    <p className="text-xs text-gray-500 mt-1">Leave empty to keep current file</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave empty to keep current file
+                    </p>
                   </div>
                 </div>
                 {uploadForm.file && (
-                  <p className="text-sm text-gray-600 mt-1">New file: {uploadForm.file.name}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    New file: {uploadForm.file.name}
+                  </p>
                 )}
               </div>
 
@@ -659,7 +741,9 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 <input
                   type="text"
                   value={uploadForm.title}
-                  onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                  onChange={(e) =>
+                    setUploadForm({ ...uploadForm, title: e.target.value })
+                  }
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -671,7 +755,12 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 </label>
                 <textarea
                   value={uploadForm.description}
-                  onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setUploadForm({
+                      ...uploadForm,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -684,7 +773,12 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                 </label>
                 <select
                   value={uploadForm.category}
-                  onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value as any })}
+                  onChange={(e) =>
+                    setUploadForm({
+                      ...uploadForm,
+                      category: e.target.value as any,
+                    })
+                  }
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="handout">Handout</option>
@@ -700,10 +794,18 @@ export default function CourseTrainingMaterials({ courseId }: CourseTrainingMate
                   id="required-edit"
                   type="checkbox"
                   checked={uploadForm.isRequired}
-                  onChange={(e) => setUploadForm({ ...uploadForm, isRequired: e.target.checked })}
+                  onChange={(e) =>
+                    setUploadForm({
+                      ...uploadForm,
+                      isRequired: e.target.checked,
+                    })
+                  }
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="required-edit" className="ml-2 block text-sm text-gray-900">
+                <label
+                  htmlFor="required-edit"
+                  className="ml-2 block text-sm text-gray-900"
+                >
                   Mark as required material
                 </label>
               </div>

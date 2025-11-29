@@ -229,7 +229,7 @@ export default function EnrolledStudents({
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">
-                Total Students
+                Total Trainees
               </p>
               <p className="text-xl font-bold text-gray-900">
                 {statusCounts.all}

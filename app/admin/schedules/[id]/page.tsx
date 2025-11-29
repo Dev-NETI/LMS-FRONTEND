@@ -346,7 +346,7 @@ export default function ScheduleDetailsPage() {
                 }`}
               >
                 <UsersIcon className="w-5 h-5 mr-2" />
-                Enrolled Students ({schedule.enrolled_students?.length || 0})
+                My Trainees ({schedule.enrolled_students?.length || 0})
               </button>
             </nav>
           </div>
