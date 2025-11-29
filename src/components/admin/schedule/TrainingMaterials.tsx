@@ -12,97 +12,35 @@ import {
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { DocumentIcon as DocumentSolidIcon } from "@heroicons/react/24/solid";
-
-interface TrainingMaterial {
-  id: number;
-  filename: string;
-  title: string;
-  description?: string;
-  fileSize: string;
-  fileType: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  category: "handout" | "manual" | "exercise" | "reference";
-  downloadCount: number;
-  isRequired: boolean;
-}
+import {
+  getTrainingMaterialsByCourse,
+  downloadTrainingMaterial,
+  TrainingMaterial,
+} from "@/src/services/trainingMaterialService";
+import { authService } from "@/src/services/authService";
 
 interface TrainingMaterialsProps {
-  scheduleId: number;
+  courseId: number;
 }
 
 export default function TrainingMaterials({
-  scheduleId,
+  courseId,
 }: TrainingMaterialsProps) {
   const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<
+    "all" | "handout" | "document" | "manual"
+  >("all");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMaterials = async () => {
+      if (!courseId) return;
+
       setIsLoading(true);
       try {
-        // Mock data - replace with actual API call
-        const mockMaterials: TrainingMaterial[] = [
-          {
-            id: 1,
-            filename: "handout.pdf",
-            title: "Maritime Safety Handout",
-            description:
-              "Comprehensive safety procedures and protocols for maritime operations",
-            fileSize: "2.4 MB",
-            fileType: "PDF",
-            uploadedBy: "Captain Johnson",
-            uploadedAt: "2024-11-25T09:00:00Z",
-            category: "handout",
-            downloadCount: 15,
-            isRequired: true,
-          },
-          {
-            id: 2,
-            filename: "emergency_procedures.pdf",
-            title: "Emergency Response Manual",
-            description:
-              "Step-by-step emergency procedures for various maritime scenarios",
-            fileSize: "4.1 MB",
-            fileType: "PDF",
-            uploadedBy: "Safety Officer Brown",
-            uploadedAt: "2024-11-24T14:30:00Z",
-            category: "manual",
-            downloadCount: 22,
-            isRequired: true,
-          },
-          {
-            id: 3,
-            filename: "fire_safety_exercise.pdf",
-            title: "Fire Safety Training Exercise",
-            description: "Practical exercises for fire prevention and response",
-            fileSize: "1.8 MB",
-            fileType: "PDF",
-            uploadedBy: "Chief Officer Smith",
-            uploadedAt: "2024-11-23T16:15:00Z",
-            category: "exercise",
-            downloadCount: 8,
-            isRequired: false,
-          },
-          {
-            id: 4,
-            filename: "imo_regulations.pdf",
-            title: "IMO Safety Regulations Reference",
-            description:
-              "International Maritime Organization safety regulations and guidelines",
-            fileSize: "6.2 MB",
-            fileType: "PDF",
-            uploadedBy: "Maritime Academy",
-            uploadedAt: "2024-11-22T11:00:00Z",
-            category: "reference",
-            downloadCount: 12,
-            isRequired: false,
-          },
-        ];
-
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        setMaterials(mockMaterials);
+        await authService.initCSRF();
+        const response = await getTrainingMaterialsByCourse(courseId);
+        setMaterials(response.materials || []);
       } catch (error) {
         console.error("Failed to fetch training materials:", error);
       } finally {
@@ -111,17 +49,15 @@ export default function TrainingMaterials({
     };
 
     fetchMaterials();
-  }, [scheduleId]);
+  }, [courseId]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "handout":
         return <DocumentSolidIcon className="w-5 h-5 text-blue-600" />;
-      case "manual":
+      case "document":
         return <DocumentIcon className="w-5 h-5 text-green-600" />;
-      case "exercise":
-        return <DocumentIcon className="w-5 h-5 text-orange-600" />;
-      case "reference":
+      case "manual":
         return <DocumentIcon className="w-5 h-5 text-purple-600" />;
       default:
         return <DocumentIcon className="w-5 h-5 text-gray-600" />;
@@ -132,11 +68,9 @@ export default function TrainingMaterials({
     switch (category) {
       case "handout":
         return "bg-blue-100 text-blue-800";
-      case "manual":
+      case "document":
         return "bg-green-100 text-green-800";
-      case "exercise":
-        return "bg-orange-100 text-orange-800";
-      case "reference":
+      case "manual":
         return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -146,7 +80,9 @@ export default function TrainingMaterials({
   const filteredMaterials =
     selectedCategory === "all"
       ? materials
-      : materials.filter((material) => material.category === selectedCategory);
+      : materials.filter(
+          (material) => material.file_category_type === selectedCategory
+        );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -158,16 +94,26 @@ export default function TrainingMaterials({
     });
   };
 
-  const handleDownload = (material: TrainingMaterial) => {
-    // Mock download functionality
-    console.log(`Downloading ${material.filename}`);
+  const formatFileSize = (bytes: number): string => {
+    const units = ["B", "KB", "MB", "GB"];
+    let size = bytes;
+    let unitIndex = 0;
 
-    // Update download count
-    setMaterials((prev) =>
-      prev.map((m) =>
-        m.id === material.id ? { ...m, downloadCount: m.downloadCount + 1 } : m
-      )
-    );
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return `${size.toFixed(2)} ${units[unitIndex]}`;
+  };
+
+  const handleDownload = async (material: TrainingMaterial) => {
+    try {
+      await authService.initCSRF();
+      await downloadTrainingMaterial(material.id);
+    } catch (error) {
+      console.error("Failed to download training material:", error);
+    }
   };
 
   if (isLoading) {
@@ -249,39 +195,30 @@ export default function TrainingMaterials({
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Handouts ({materials.filter((m) => m.category === "handout").length})
+          Handouts (
+          {materials.filter((m) => m.file_category_type === "handout").length})
+        </button>
+        <button
+          onClick={() => setSelectedCategory("document")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+            selectedCategory === "document"
+              ? "bg-green-100 text-green-700"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Documents (
+          {materials.filter((m) => m.file_category_type === "document").length})
         </button>
         <button
           onClick={() => setSelectedCategory("manual")}
           className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
             selectedCategory === "manual"
-              ? "bg-green-100 text-green-700"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Manuals ({materials.filter((m) => m.category === "manual").length})
-        </button>
-        <button
-          onClick={() => setSelectedCategory("exercise")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-            selectedCategory === "exercise"
-              ? "bg-orange-100 text-orange-700"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Exercises ({materials.filter((m) => m.category === "exercise").length}
-          )
-        </button>
-        <button
-          onClick={() => setSelectedCategory("reference")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-            selectedCategory === "reference"
               ? "bg-purple-100 text-purple-700"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Reference (
-          {materials.filter((m) => m.category === "reference").length})
+          Manuals (
+          {materials.filter((m) => m.file_category_type === "manual").length})
         </button>
       </div>
 
@@ -297,33 +234,28 @@ export default function TrainingMaterials({
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-gray-50 rounded-lg">
-                    {getCategoryIcon(material.category)}
+                    {getCategoryIcon(material.file_category_type)}
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-medium text-gray-900 leading-tight">
                       {material.title}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      {material.filename}
+                      {material.file_name}
                     </p>
                   </div>
                 </div>
-                {material.isRequired && (
-                  <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
-                    Required
-                  </span>
-                )}
               </div>
 
               {/* Category Badge */}
               <div className="mb-3">
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(
-                    material.category
+                    material.file_category_type
                   )}`}
                 >
-                  {material.category.charAt(0).toUpperCase() +
-                    material.category.slice(1)}
+                  {material.file_category_type.charAt(0).toUpperCase() +
+                    material.file_category_type.slice(1)}
                 </span>
               </div>
 
@@ -335,22 +267,24 @@ export default function TrainingMaterials({
               {/* File Info */}
               <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                 <span>
-                  {material.fileType} • {material.fileSize}
+                  {material.file_type.split("/").pop()?.toUpperCase()} •{" "}
+                  {formatFileSize(material.file_size)}
                 </span>
-                <span>{material.downloadCount} downloads</span>
               </div>
             </div>
 
             {/* Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center text-xs text-gray-500">
-                  <UserIcon className="w-3 h-3 mr-1" />
-                  {material.uploadedBy}
-                </div>
+                {material.uploaded_by && (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <UserIcon className="w-3 h-3 mr-1" />
+                    {material.uploaded_by.f_name} {material.uploaded_by.l_name}
+                  </div>
+                )}
                 <div className="flex items-center text-xs text-gray-500">
                   <CalendarIcon className="w-3 h-3 mr-1" />
-                  {formatDate(material.uploadedAt)}
+                  {formatDate(material.created_at)}
                 </div>
               </div>
 
@@ -364,14 +298,6 @@ export default function TrainingMaterials({
                 >
                   <DocumentArrowDownIcon className="w-4 h-4 mr-1" />
                   Download
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="px-3"
-                  title="Preview"
-                >
-                  <EyeIcon className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -388,7 +314,7 @@ export default function TrainingMaterials({
           </h3>
           <p className="text-gray-600">
             {selectedCategory === "all"
-              ? "No training materials are available for this schedule."
+              ? "No training materials are available for this course."
               : `No ${selectedCategory} materials found.`}
           </p>
         </div>

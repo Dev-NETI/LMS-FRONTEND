@@ -361,7 +361,7 @@ export default function ScheduleDetailsPage() {
           )}
 
           {activeTab === "materials" && (
-            <TrainingMaterials scheduleId={schedule.scheduleid} />
+            <TrainingMaterials courseId={schedule.courseid} />
           )}
 
           {activeTab === "students" && (
