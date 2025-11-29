@@ -52,7 +52,7 @@ export default function LoginPage() {
       await loginAdmin(data);
       toast.success("Login successful! Welcome back.");
       // Use replace to avoid adding to history stack
-      router.replace("/dashboard");
+      router.replace("/admin/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Login failed. Please try again.");
     } finally {

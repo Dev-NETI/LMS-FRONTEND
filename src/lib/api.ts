@@ -9,7 +9,7 @@ export const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: false,
+  withCredentials: false, // Using token-based authentication, not sessions
 });
 
 // Initialize CSRF protection
@@ -26,25 +26,37 @@ export const initializeCSRF = async () => {
   }
 };
 
-// Add Bearer token to requests
+// Add Bearer token for API authentication and CSRF for login
 api.interceptors.request.use(
   async (config) => {
-    // Add Bearer token for authentication (except login)
     const token = Cookies.get('auth_token');
     const isLoginRequest = config.url?.includes('/login');
     
-    if (token && !isLoginRequest) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
-    // Add CSRF token only for login request
-    if (isLoginRequest && config.method?.toLowerCase() === 'post') {
-      config.withCredentials = true; // Enable cookies for login
+    if (isLoginRequest) {
+      // For login requests, add CSRF protection
+      config.withCredentials = true;
+      
+      // Get CSRF token
       const xsrfToken = Cookies.get('XSRF-TOKEN');
-      if (xsrfToken) {
+      if (!xsrfToken) {
+        // Initialize CSRF if not available
+        try {
+          await initializeCSRF();
+          const newXsrfToken = Cookies.get('XSRF-TOKEN');
+          if (newXsrfToken) {
+            const decodedToken = decodeURIComponent(newXsrfToken);
+            config.headers['X-XSRF-TOKEN'] = decodedToken;
+          }
+        } catch (error) {
+          console.warn('Failed to initialize CSRF:', error);
+        }
+      } else {
         const decodedToken = decodeURIComponent(xsrfToken);
         config.headers['X-XSRF-TOKEN'] = decodedToken;
       }
+    } else if (token) {
+      // For authenticated requests, add Bearer token
+      config.headers.Authorization = `Bearer ${token}`;
     }
     
     return config;
@@ -57,17 +69,46 @@ api.interceptors.request.use(
 // Handle responses
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    if (error.response?.status === 419) {
+      // CSRF token mismatch - try to refresh and retry once for login requests
+      const isLoginRequest = error.config?.url?.includes('/login');
+      
+      if (isLoginRequest) {
+        try {
+          await initializeCSRF();
+          // Retry the original request
+          const originalConfig = error.config;
+          if (originalConfig && !originalConfig._retry) {
+            originalConfig._retry = true;
+            originalConfig.withCredentials = true;
+            const xsrfToken = Cookies.get('XSRF-TOKEN');
+            if (xsrfToken) {
+              originalConfig.headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
+            }
+            return api.request(originalConfig);
+          }
+        } catch (retryError) {
+          console.error('Failed to retry login request after CSRF refresh:', retryError);
+        }
+      }
+    }
+    
     if (error.response?.status === 401) {
       // Don't redirect to login if this is a login attempt failure
       const isLoginRequest = error.config?.url?.includes('/login');
       
       if (!isLoginRequest) {
-        // Clear session data and redirect to login only for authenticated routes
+        // Clear token and user data, redirect to appropriate login based on current route
         Cookies.remove('auth_token');
         Cookies.remove('user');
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          const currentPath = window.location.pathname;
+          if (currentPath.startsWith('/admin')) {
+            window.location.href = '/admin/auth/login';
+          } else {
+            window.location.href = '/login';
+          }
         }
       }
     }

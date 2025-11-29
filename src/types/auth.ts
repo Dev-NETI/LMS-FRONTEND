@@ -1,9 +1,11 @@
 export interface User {
   id: number;
-  username: string;
+  username?: string;
+  name: string;
   email: string;
-  f_name: string;
-  l_name: string;
+  f_name?: string;
+  l_name?: string;
+  user_type?: 'admin' | 'trainee'; // Optional field to distinguish user types
 }
 
 export interface LoginCredentials {
@@ -23,7 +25,7 @@ export interface AuthContextType {
   token: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   loginAdmin: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
+  logout: (userType?: 'admin' | 'trainee') => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
 }

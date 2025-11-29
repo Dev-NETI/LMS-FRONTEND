@@ -24,13 +24,16 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
+  console.log("user:", user);
+
   const handleLogout = async () => {
     try {
-      await logout();
+      await logout("admin");
       toast.success("Logged out successfully");
-      router.push("/admin/auth/login");
+      // No need to manually redirect as logout function handles it
     } catch (error) {
       toast.error("Logout failed");
+      console.error("Logout error:", error);
     }
   };
 
@@ -79,7 +82,8 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             <div className="flex items-center space-x-3">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium text-gray-900">
-                  {user?.f_name} {user?.l_name}
+                  {user?.name ||
+                    `${user?.f_name || ""} ${user?.l_name || ""}`.trim()}
                 </p>
                 <p className="text-xs text-gray-500">Administrator</p>
               </div>
@@ -104,7 +108,10 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                       <div className="px-4 py-3 border-b border-gray-200">
                         <div className="text-sm font-medium text-gray-900">
-                          {user?.f_name} {user?.l_name}
+                          {user?.name ||
+                            `${user?.f_name || ""} ${
+                              user?.l_name || ""
+                            }`.trim()}
                         </div>
                         <div className="text-sm text-gray-500">
                           {user?.email}
