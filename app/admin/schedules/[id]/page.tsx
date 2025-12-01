@@ -15,6 +15,7 @@ import {
   DocumentTextIcon,
   UsersIcon,
   ClockIcon,
+  AcademicCapIcon,
 } from "@heroicons/react/24/outline";
 import AnnouncementFeed from "@/src/components/admin/schedule/AnnouncementFeed";
 import ProgressMonitoring from "@/src/components/admin/schedule/ProgressMonitoring";
@@ -24,6 +25,7 @@ import {
   CourseSchedule,
   getCourseScheduleById,
 } from "@/src/services/scheduleService";
+import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable";
 
 export default function ScheduleDetailsPage() {
   const params = useParams();
@@ -31,7 +33,7 @@ export default function ScheduleDetailsPage() {
   const [schedule, setSchedule] = useState<CourseSchedule | null>(null);
   const [courseName, setCourseName] = useState<string>("");
   const [activeTab, setActiveTab] = useState<
-    "announcements" | "progress" | "materials" | "students"
+    "announcements" | "progress" | "course_overview" | "materials" | "students"
   >("announcements");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -308,6 +310,18 @@ export default function ScheduleDetailsPage() {
                 Announcements
               </button>
 
+              <button
+                onClick={() => setActiveTab("course_overview")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
+                  activeTab === "course_overview"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <AcademicCapIcon className="w-5 h-5 mr-2" />
+                Course Overview
+              </button>
+
               {/* Only show Progress Monitoring if mode of delivery is NOT 4 (self-paced distance learning) */}
               {schedule.course?.modeofdeliveryid === 4 && (
                 <button
@@ -354,6 +368,10 @@ export default function ScheduleDetailsPage() {
           {/* Tab Content */}
           {activeTab === "announcements" && (
             <AnnouncementFeed scheduleId={schedule.scheduleid} />
+          )}
+
+          {activeTab === "course_overview" && (
+            <CourseDetailsTable courseId={schedule.courseid} />
           )}
 
           {activeTab === "progress" && schedule.modeofdeliveryid === 4 && (
