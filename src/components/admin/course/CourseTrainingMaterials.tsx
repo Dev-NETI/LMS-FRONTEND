@@ -13,15 +13,13 @@ import {
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import {
-  DocumentIcon as DocumentSolidIcon,
-} from "@heroicons/react/24/solid";
+import { DocumentIcon as DocumentSolidIcon } from "@heroicons/react/24/solid";
 import {
   getTrainingMaterialsByCourse,
   createTrainingMaterial,
   updateTrainingMaterial,
   deleteTrainingMaterial,
-  downloadTrainingMaterial,
+  viewTrainingMaterial,
   TrainingMaterial,
   CreateTrainingMaterialData,
   UpdateTrainingMaterialData,
@@ -182,12 +180,13 @@ export default function CourseTrainingMaterials({
     }
   };
 
-  const handleDownloadMaterial = async (material: TrainingMaterial) => {
+  const handleViewMaterial = async (material: TrainingMaterial) => {
     try {
       await authService.initCSRF();
-      await downloadTrainingMaterial(material.id);
+      const url = await viewTrainingMaterial(material.id);
+      window.open(url, '_blank');
     } catch (error) {
-      console.error("Failed to download training material:", error);
+      console.error("Failed to view training material:", error);
     }
   };
 
@@ -257,13 +256,21 @@ export default function CourseTrainingMaterials({
 
         <div className="flex gap-2">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} variant="rectangular" width={80} height={32} />
+            <Skeleton
+              key={index}
+              variant="rectangular"
+              width={80}
+              height={32}
+            />
           ))}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
+            <div
+              key={index}
+              className="bg-white rounded-lg border border-gray-200 p-6"
+            >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Skeleton variant="rounded" width={40} height={40} />
@@ -288,184 +295,199 @@ export default function CourseTrainingMaterials({
 
   return (
     <>
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Training Materials</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage course handouts, documents, and reference materials
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowUploadModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Upload Material
-        </Button>
-      </div>
-
-      {/* Category Filter */}
-      <div className="flex gap-2 overflow-x-auto">
-        <button
-          onClick={() => setSelectedCategory("all")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-            selectedCategory === "all"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          All Materials ({materials.length})
-        </button>
-        <button
-          onClick={() => setSelectedCategory("handout")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-            selectedCategory === "handout"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Handouts ({materials.filter(m => m.file_category_type === "handout").length})
-        </button>
-        <button
-          onClick={() => setSelectedCategory("document")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-            selectedCategory === "document"
-              ? "bg-green-100 text-green-700"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Documents ({materials.filter(m => m.file_category_type === "document").length})
-        </button>
-        <button
-          onClick={() => setSelectedCategory("manual")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-            selectedCategory === "manual"
-              ? "bg-purple-100 text-purple-700"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Manuals ({materials.filter(m => m.file_category_type === "manual").length})
-        </button>
-      </div>
-
-      {/* Materials Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredMaterials.map((material) => (
-          <div key={material.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-            {/* Header */}
-            <div className="p-6 pb-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gray-50 rounded-lg">
-                    {getCategoryIcon(material.file_category_type)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-medium text-gray-900 leading-tight">
-                      {material.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {material.file_name}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => handleEditMaterial(material)}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                    title="Edit"
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteMaterial(material)}
-                    disabled={isDeleting[material.id]}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
-                    title="Delete"
-                  >
-                    {isDeleting[material.id] ? (
-                      <div className="w-4 h-4 border-2 border-gray-300 border-t-red-600 rounded-full animate-spin"></div>
-                    ) : (
-                      <TrashIcon className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Category Badge */}
-              <div className="mb-3">
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(material.file_category_type)}`}>
-                  {material.file_category_type.charAt(0).toUpperCase() + material.file_category_type.slice(1)}
-                </span>
-              </div>
-
-              {/* Description */}
-              {material.description && (
-                <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-                  {material.description}
-                </p>
-              )}
-
-              {/* File Info */}
-              <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                <span>{material.file_type.split('/').pop()?.toUpperCase()} • {formatFileSize(material.file_size)}</span>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                {material.uploaded_by && (
-                  <div className="flex items-center text-xs text-gray-500">
-                    <UserIcon className="w-3 h-3 mr-1" />
-                    {material.uploaded_by?.f_name} {material.uploaded_by?.l_name}
-                  </div>
-                )}
-                <div className="flex items-center text-xs text-gray-500">
-                  <CalendarIcon className="w-3 h-3 mr-1" />
-                  {formatDate(material.created_at)}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownloadMaterial(material)}
-                  className="flex-1 text-xs"
-                >
-                  <DocumentArrowDownIcon className="w-4 h-4 mr-1" />
-                  Download
-                </Button>
-              </div>
-            </div>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Training Materials
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Manage course handouts, documents, and reference materials
+            </p>
           </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredMaterials.length === 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <FolderIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No materials found
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {selectedCategory === "all" 
-              ? "No training materials have been uploaded yet." 
-              : `No ${selectedCategory} materials found.`
-            }
-          </p>
           <Button
             onClick={() => setShowUploadModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Upload First Material
+            Upload Material
           </Button>
         </div>
-      )}
-    </div>
+
+        {/* Category Filter */}
+        <div className="flex gap-2 overflow-x-auto">
+          <button
+            onClick={() => setSelectedCategory("all")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+              selectedCategory === "all"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            All Materials ({materials.length})
+          </button>
+          <button
+            onClick={() => setSelectedCategory("handout")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+              selectedCategory === "handout"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Handouts (
+            {materials.filter((m) => m.file_category_type === "handout").length}
+            )
+          </button>
+          <button
+            onClick={() => setSelectedCategory("document")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+              selectedCategory === "document"
+                ? "bg-green-100 text-green-700"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Documents (
+            {
+              materials.filter((m) => m.file_category_type === "document")
+                .length
+            }
+            )
+          </button>
+          <button
+            onClick={() => setSelectedCategory("manual")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+              selectedCategory === "manual"
+                ? "bg-purple-100 text-purple-700"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Manuals (
+            {materials.filter((m) => m.file_category_type === "manual").length})
+          </button>
+        </div>
+
+        {/* Materials Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMaterials.map((material) => (
+            <div
+              key={material.id}
+              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+            >
+              {/* Header */}
+              <div className="p-6 pb-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-gray-50 rounded-lg">
+                      {getCategoryIcon(material.file_category_type)}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-gray-900 leading-tight">
+                        {material.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {material.file_name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleViewMaterial(material)}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                      title="View"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleEditMaterial(material)}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                      title="Edit"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMaterial(material)}
+                      disabled={isDeleting[material.id]}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      title="Delete"
+                    >
+                      {isDeleting[material.id] ? (
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-red-600 rounded-full animate-spin"></div>
+                      ) : (
+                        <TrashIcon className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Category Badge */}
+                <div className="mb-3">
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(
+                      material.file_category_type
+                    )}`}
+                  >
+                    {material.file_category_type.charAt(0).toUpperCase() +
+                      material.file_category_type.slice(1)}
+                  </span>
+                </div>
+
+                {/* Description */}
+                {material.description && (
+                  <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                    {material.description}
+                  </p>
+                )}
+
+                {/* File Info */}
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                  <span>
+                    {material.file_type.split("/").pop()?.toUpperCase()} •{" "}
+                    {formatFileSize(material.file_size)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  {material.uploaded_by && (
+                    <div className="flex items-center text-xs text-gray-500">
+                      <UserIcon className="w-3 h-3 mr-1" />
+                      {material.uploaded_by?.f_name}{" "}
+                      {material.uploaded_by?.l_name}
+                    </div>
+                  )}
+                  <div className="flex items-center text-xs text-gray-500">
+                    <CalendarIcon className="w-3 h-3 mr-1" />
+                    {formatDate(material.created_at)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredMaterials.length === 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <FolderIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No materials found
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {selectedCategory === "all"
+                ? "No training materials have been uploaded yet."
+                : `No ${selectedCategory} materials found.`}
+            </p>
+            <Button
+              onClick={() => setShowUploadModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Upload First Material
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Upload Modal */}
       {showUploadModal && (
@@ -552,7 +574,7 @@ export default function CourseTrainingMaterials({
                     }
                     className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     disabled={isUploading}
-                    accept="*/*"
+                    accept=".pdf"
                   />
                   {uploadData.file && (
                     <p className="mt-2 text-sm text-gray-600">
@@ -561,7 +583,7 @@ export default function CourseTrainingMaterials({
                     </p>
                   )}
                   <p className="mt-2 text-xs text-gray-500">
-                    Support for all file types, max 50MB
+                    Only PDF files allowed, max 50MB
                   </p>
                 </div>
               </div>
@@ -693,7 +715,8 @@ export default function CourseTrainingMaterials({
                     <div className="flex justify-between">
                       <span>Uploaded by:</span>
                       <span className="font-medium text-blue-600">
-                        {editingMaterial.uploaded_by.f_name} {editingMaterial.uploaded_by.l_name}
+                        {editingMaterial.uploaded_by.f_name}{" "}
+                        {editingMaterial.uploaded_by.l_name}
                       </span>
                     </div>
                   )}

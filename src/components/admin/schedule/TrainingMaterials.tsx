@@ -14,7 +14,7 @@ import {
 import { DocumentIcon as DocumentSolidIcon } from "@heroicons/react/24/solid";
 import {
   getTrainingMaterialsByCourse,
-  downloadTrainingMaterial,
+  viewTrainingMaterial,
   TrainingMaterial,
 } from "@/src/services/trainingMaterialService";
 import { authService } from "@/src/services/authService";
@@ -107,12 +107,13 @@ export default function TrainingMaterials({
     return `${size.toFixed(2)} ${units[unitIndex]}`;
   };
 
-  const handleDownload = async (material: TrainingMaterial) => {
+  const handleView = async (material: TrainingMaterial) => {
     try {
       await authService.initCSRF();
-      await downloadTrainingMaterial(material.id);
+      const url = await viewTrainingMaterial(material.id);
+      window.open(url, '_blank');
     } catch (error) {
-      console.error("Failed to download training material:", error);
+      console.error("Failed to view training material:", error);
     }
   };
 
@@ -293,11 +294,11 @@ export default function TrainingMaterials({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDownload(material)}
+                  onClick={() => handleView(material)}
                   className="flex-1 text-xs"
                 >
-                  <DocumentArrowDownIcon className="w-4 h-4 mr-1" />
-                  Download
+                  <EyeIcon className="w-4 h-4 mr-1" />
+                  View
                 </Button>
               </div>
             </div>

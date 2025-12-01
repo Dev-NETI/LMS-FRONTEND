@@ -70,6 +70,12 @@ export const getTrainingMaterialsByCourse = async (courseId: number): Promise<{ 
 // Create a new training material
 export const createTrainingMaterial = async (data: CreateTrainingMaterialData): Promise<{ success: boolean; message: string; material: TrainingMaterial }> => {
   try {
+    // Validate PDF file before upload
+    const validation = validatePdfFile(data.file);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
+    }
+
     const formData = new FormData();
     formData.append('course_id', data.course_id.toString());
     formData.append('title', data.title);
@@ -123,34 +129,33 @@ export const deleteTrainingMaterial = async (id: number): Promise<{ success: boo
   }
 };
 
-// Download a training material
-export const downloadTrainingMaterial = async (id: number): Promise<void> => {
+// Helper function to validate PDF files
+export const validatePdfFile = (file: File): { isValid: boolean; error?: string } => {
+  const allowedTypes = ['application/pdf'];
+  const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+
+  if (!allowedTypes.includes(file.type)) {
+    return { isValid: false, error: 'Only PDF files are allowed' };
+  }
+
+  if (file.size > maxSize) {
+    return { isValid: false, error: 'File size must be less than 50MB' };
+  }
+
+  return { isValid: true };
+};
+
+// View a training material
+export const viewTrainingMaterial = async (id: number): Promise<string> => {
   try {
-    const response = await api.get(`/api/admin/training-materials/${id}/download`, {
+    const response = await api.get(`/api/admin/training-materials/${id}/view`, {
       responseType: 'blob',
     });
     
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    
-    // Get filename from response headers
-    const contentDisposition = response.headers['content-disposition'];
-    let filename = 'download';
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-      if (filenameMatch) {
-        filename = filenameMatch[1];
-      }
-    }
-    
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    return url;
   } catch (error) {
-    console.error('Error downloading training material:', error);
+    console.error('Error viewing training material:', error);
     throw error;
   }
 };
