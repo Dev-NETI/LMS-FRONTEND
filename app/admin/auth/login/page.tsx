@@ -6,7 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AcademicCapIcon } from "@heroicons/react/24/outline";
+import {
+  ShieldCheckIcon,
+  EyeIcon,
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import toast from "react-hot-toast";
@@ -20,6 +24,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { loginAdmin, isAuthenticated } = useAuth();
   const router = useRouter();
   const loginInProgress = useRef(false);
@@ -62,85 +67,116 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-lg">
-            <AcademicCapIcon className="h-8 w-8 text-blue-600" />
+    <div className="min-h-screen flex">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v22H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z'/%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        ></div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="flex-1 lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+        <div className="w-full max-w-sm">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="lg:hidden mx-auto w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center mb-4">
+              <ShieldCheckIcon className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-1">
+              Admin Login
+            </h1>
+            <p className="text-gray-600 text-sm">Management dashboard access</p>
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-          <p className="text-blue-200">
-            Sign in to access your learning dashboard
+
+          {/* Login Form */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Email Field */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Email
+                </label>
+                <Input
+                  {...register("email")}
+                  type="email"
+                  id="email"
+                  placeholder="Enter your email"
+                  className="w-full h-11 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <Input
+                    {...register("password")}
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    placeholder="Enter your password"
+                    className="w-full h-11 px-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="w-4 h-4" />
+                    ) : (
+                      <EyeIcon className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                    Signing in...
+                  </div>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </form>
+          </div>
+
+          {/* Footer */}
+          <p className="text-center text-gray-500 text-xs mt-6">
+            Learning Management System
           </p>
         </div>
-
-        {/* Login Form */}
-        <div className="bg-white rounded-lg p-8 shadow-lg">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmit(onSubmit)(e);
-            }}
-            className="space-y-6"
-          >
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-900"
-              >
-                Email Address
-              </label>
-              <Input
-                {...register("email")}
-                type="email"
-                id="email"
-                placeholder="Enter your email"
-                className="w-full"
-              />
-              {errors.email && (
-                <p className="text-red-600 text-sm">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-900"
-              >
-                Password
-              </label>
-              <Input
-                {...register("password")}
-                type="password"
-                id="password"
-                placeholder="Enter your password"
-                className="w-full"
-              />
-              {errors.password && (
-                <p className="text-red-600 text-sm">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
-        </div>
-
-        {/* Footer Text */}
-        <p className="text-center text-blue-200 text-sm">
-          Secure learning management system
-        </p>
       </div>
     </div>
   );
