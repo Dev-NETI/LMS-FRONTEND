@@ -45,6 +45,7 @@ export interface ReplyData {
   created_at: string;
   updated_at?: string;
   user?: AnnouncementUser;
+  trainee_user?: AnnouncementUser;
 }
 
 export interface ReplyResponse {
@@ -60,6 +61,7 @@ export interface ReplyResponse {
 
 export interface CreateReplyData {
   content: string;
+  user_type?  : 'admin' | 'trainee';
 }
 
 export interface AnnouncementResponse {
@@ -76,6 +78,7 @@ export interface CreateAnnouncementData {
   content: string;
   is_active?: boolean;
   published_at?: string;
+  user_type?: 'admin' | 'trainee';
 }
 
 export const getAnnouncementsBySchedule = async (scheduleId: number): Promise<{ schedule: ScheduleData; announcements: AnnouncementPost[] }> => {
@@ -149,7 +152,7 @@ export const toggleAnnouncementActive = async (id: number): Promise<{ message: s
   }
 };
 
-// Reply functions
+// Admin Reply functions
 export const getAnnouncementReplies = async (announcementId: number, activeOnly: boolean = true): Promise<ReplyResponse> => {
   try {
     const response = await api.get(`/api/admin/announcements/${announcementId}/replies?active_only=${activeOnly}`);
@@ -183,6 +186,47 @@ export const updateAnnouncementReply = async (replyId: number, data: CreateReply
 export const deleteAnnouncementReply = async (replyId: number): Promise<{ message: string }> => {
   try {
     const response = await api.delete(`/api/admin/replies/${replyId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting reply:', error);
+    throw error;
+  }
+};
+
+// Trainee Reply functions
+export const getAnnouncementRepliesTrainee = async (announcementId: number, activeOnly: boolean = true): Promise<ReplyResponse> => {
+  try {
+    const response = await api.get(`/api/trainee/announcements/${announcementId}/replies?active_only=${activeOnly}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching announcement replies:', error);
+    throw error;
+  }
+};
+
+export const createAnnouncementReplyTrainee = async (announcementId: number, data: CreateReplyData): Promise<{ message: string; reply: ReplyData }> => {
+  try {
+    const response = await api.post(`/api/trainee/announcements/${announcementId}/replies`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating reply:', error);
+    throw error;
+  }
+};
+
+export const updateAnnouncementReplyTrainee = async (replyId: number, data: CreateReplyData): Promise<{ message: string; reply: ReplyData }> => {
+  try {
+    const response = await api.put(`/api/trainee/replies/${replyId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating reply:', error);
+    throw error;
+  }
+};
+
+export const deleteAnnouncementReplyTrainee = async (replyId: number): Promise<{ message: string }> => {
+  try {
+    const response = await api.delete(`/api/trainee/replies/${replyId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting reply:', error);

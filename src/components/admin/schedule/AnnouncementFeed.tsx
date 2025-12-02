@@ -107,6 +107,7 @@ export default function AnnouncementFeed({
         title: newAnnouncement.title,
         content: newAnnouncement.content,
         is_active: true,
+        user_type: "admin",
       };
 
       const response = await createAnnouncement(createData);
@@ -166,6 +167,8 @@ export default function AnnouncementFeed({
     try {
       await authService.initCSRF();
       const response = await getAnnouncementReplies(announcementId);
+
+      console.log(response);
       setReplies({ ...replies, [announcementId]: response.replies.data });
     } catch (error) {
       console.error("Failed to fetch replies:", error);
@@ -196,6 +199,7 @@ export default function AnnouncementFeed({
 
       const replyData: CreateReplyData = {
         content: content.trim(),
+        user_type: "admin",
       };
 
       const response = await createAnnouncementReply(announcementId, replyData);
@@ -298,15 +302,11 @@ export default function AnnouncementFeed({
   };
 
   const canEditReply = (reply: ReplyData) => {
-    return user && (user.id === reply.user_id || user.user_type === "admin");
+    return user && user.id === reply.user_id;
   };
 
   const canEditAnnouncement = (announcement: AnnouncementPost) => {
-    return (
-      user &&
-      (user.id === announcement.created_by_user_id ||
-        user.user_type === "admin")
-    );
+    return user && user.id === announcement.created_by_user_id;
   };
 
   const handleEditAnnouncement = (announcement: AnnouncementPost) => {
@@ -797,14 +797,24 @@ export default function AnnouncementFeed({
                         >
                           <div className="w-7 h-7 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center shadow-sm">
                             <span className="text-white text-xs font-medium">
-                              {getAuthorName(reply.user).charAt(0)}
+                              {reply.user_type === "admin"
+                                ? reply.user?.f_name?.charAt(0).toUpperCase()
+                                : reply.trainee_user?.f_name
+                                    ?.charAt(0)
+                                    .toUpperCase()}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center space-x-1">
                                 <span className="font-medium text-gray-900 text-xs">
-                                  {getAuthorName(reply.user)}
+                                  {reply.user_type === "admin"
+                                    ? reply.user?.f_name +
+                                      " " +
+                                      reply.user?.l_name
+                                    : reply.trainee_user?.f_name +
+                                      " " +
+                                      reply.trainee_user?.l_name}
                                 </span>
                                 {getUserBadge(reply.user?.user_type)}
                                 <span className="text-gray-400 text-xs">•</span>
