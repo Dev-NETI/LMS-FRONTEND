@@ -374,9 +374,10 @@ export default function ScheduleDetailsPage() {
             <CourseDetailsTable courseId={schedule.courseid} />
           )}
 
-          {activeTab === "progress" && schedule.modeofdeliveryid === 4 && (
-            <ProgressMonitoring scheduleId={schedule.scheduleid} />
-          )}
+          {activeTab === "progress" &&
+            schedule.course?.modeofdeliveryid === 4 && (
+              <ProgressMonitoring scheduleId={schedule.scheduleid} />
+            )}
 
           {activeTab === "materials" && (
             <TrainingMaterials courseId={schedule.courseid} />
