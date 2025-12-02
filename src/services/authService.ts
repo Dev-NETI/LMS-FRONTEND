@@ -33,7 +33,7 @@ export const authService = {
     return response.data;
   },
 
-  // Trainee login
+  // Trainee login (token-based, no CSRF needed)
   async loginTrainee(email: string, password: string) {
     await this.initCSRF();
     const response = await axios.post('/api/trainee/login', { email, password });

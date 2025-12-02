@@ -8,6 +8,7 @@ const axios = Axios.create({
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
     },
+    
     withCredentials: true,
     withXSRFToken: true
 });
@@ -16,10 +17,39 @@ const axios = Axios.create({
 axios.interceptors.request.use((config) => {
     const token = Cookies.get('auth_token');
     const isLoginRequest = config.url?.includes('/login');
+    const isTraineeRequest = config.url?.includes('/api/trainee');
+    const isAdminRequest = config.url?.includes('/api/admin');
     
-    // Add Bearer token for authenticated requests (not login)
-    if (token && !isLoginRequest) {
-        config.headers.Authorization = `Bearer ${token}`;
+    // For trainee requests, use pure token authentication (no credentials/CSRF)
+    if (isTraineeRequest) {
+        config.withCredentials = true;
+        config.withXSRFToken = true;
+        
+        // Add Bearer token for authenticated trainee requests (not login)
+        if (token && !isLoginRequest) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        
+        // Remove CSRF token header if it exists
+        delete config.headers['X-CSRF-TOKEN'];
+        delete config.headers['X-Xsrf-Token'];
+    } else if (isAdminRequest) {
+        // For admin requests, enable credentials and CSRF
+        config.withCredentials = true;
+        config.withXSRFToken = true;
+        
+        // Add Bearer token for authenticated admin requests (not login)
+        if (token && !isLoginRequest) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    } else {
+        // For other requests (like CSRF cookie), enable credentials
+        config.withCredentials = true;
+        
+        // Add Bearer token if available and not login
+        if (token && !isLoginRequest) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
     }
     
     return config;
