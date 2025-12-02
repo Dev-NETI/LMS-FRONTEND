@@ -89,7 +89,7 @@ export default function LoginPage() {
               <AcademicCapIcon className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-              Student Login
+              Trainee Login
             </h1>
             <p className="text-gray-600 text-sm">
               Access your learning dashboard

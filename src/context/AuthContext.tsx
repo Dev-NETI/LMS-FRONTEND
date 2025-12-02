@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Verify the token is still valid by calling /me endpoint
             const userType = userData.user_type;
-            
+
             if (userType === "admin") {
               const response = await authService.getAdminUser();
               setUser({ ...userData, ...response.user });
@@ -55,12 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      const response = await authService.loginTrainee(credentials.email, credentials.password);
+      const response = await authService.loginTrainee(
+        credentials.email,
+        credentials.password
+      );
       const { token: authToken, user: userData } = response;
 
       // Add user_type to distinguish trainee from admin
       const userWithType = { ...userData, user_type: "trainee" as const };
-      
+
       setToken(authToken);
       setUser(userWithType);
 
@@ -77,7 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginAdmin = async (credentials: LoginCredentials) => {
     try {
-      const response = await authService.loginAdmin(credentials.email, credentials.password);
+      const response = await authService.loginAdmin(
+        credentials.email,
+        credentials.password
+      );
       const { user: userData } = response;
 
       // Add user_type to distinguish admin from trainee

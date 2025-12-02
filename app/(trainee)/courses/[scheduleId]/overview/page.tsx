@@ -9,7 +9,6 @@ import { useAuth } from "@/src/context/AuthContext";
 import TraineeScheduleOverview from "@/src/components/trainee/TraineeScheduleOverview";
 import TraineeAnnouncementFeed from "@/src/components/trainee/TraineeAnnouncementFeed";
 import TraineeProgressTracking from "@/src/components/trainee/TraineeProgressTracking";
-import TraineeCourseContent from "@/src/components/trainee/TraineeCourseContent";
 import TraineeTrainingMaterials from "@/src/components/trainee/TraineeTrainingMaterials";
 import {
   CourseSchedule,
@@ -123,10 +122,6 @@ export default function CourseOverviewPage() {
           {/* Tab Content */}
           {activeTab === "announcements" && (
             <TraineeAnnouncementFeed scheduleId={Number(params.scheduleId)} />
-          )}
-
-          {activeTab === "course_overview" && schedule && (
-            <TraineeCourseContent courseId={schedule.courseid} />
           )}
 
           {activeTab === "progress" &&

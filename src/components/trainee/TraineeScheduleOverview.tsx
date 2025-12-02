@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   CalendarIcon,
   ClockIcon,
-  UsersIcon,
   AcademicCapIcon,
   ChartBarIcon,
   BookOpenIcon,
@@ -273,7 +272,7 @@ export default function TraineeScheduleOverview({
             }`}
           >
             <AcademicCapIcon className="w-5 h-5 mr-2" />
-            Course Content
+            Course Overview
           </button>
 
           {schedule.course?.modeofdeliveryid === 4 && (
