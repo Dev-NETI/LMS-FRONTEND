@@ -10,6 +10,7 @@ import TraineeScheduleOverview from "@/src/components/trainee/TraineeScheduleOve
 import TraineeAnnouncementFeed from "@/src/components/trainee/TraineeAnnouncementFeed";
 import TraineeProgressTracking from "@/src/components/trainee/TraineeProgressTracking";
 import TraineeTrainingMaterials from "@/src/components/trainee/TraineeTrainingMaterials";
+import TraineeCourseDetails from "@/src/components/trainee/TraineeCourseDetails";
 import {
   CourseSchedule,
   getScheduleForTrainee,
@@ -122,6 +123,10 @@ export default function CourseOverviewPage() {
           {/* Tab Content */}
           {activeTab === "announcements" && (
             <TraineeAnnouncementFeed scheduleId={Number(params.scheduleId)} />
+          )}
+
+          {activeTab === "course_overview" && schedule && (
+            <TraineeCourseDetails courseId={schedule.courseid} />
           )}
 
           {activeTab === "progress" &&

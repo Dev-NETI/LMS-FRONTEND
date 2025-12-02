@@ -61,6 +61,16 @@ export const getCourseDetailsByCourse = async (courseId: number): Promise<{ succ
   }
 };
 
+export const getCourseDetailsByCourseTrainee = async (courseId: number): Promise<{ success: boolean; course_id: number } & CourseDetailsByType> => {
+  try {
+    const response = await api.get(`/api/trainee/courses/${courseId}/details`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching course details by course:', error);
+    throw error;
+  }
+};
+
 // Create a new course detail
 export const createCourseDetail = async (data: CreateCourseDetailData): Promise<{ success: boolean; message: string; detail: CourseDetail }> => {
   try {
