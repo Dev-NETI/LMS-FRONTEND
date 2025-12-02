@@ -100,7 +100,7 @@ export default function TraineeAnnouncementFeed({
       const middleInitial = user.m_name?.trim()
         ? ` ${user.m_name.charAt(0)}.`
         : "";
-      const fullName = `${firstName}${middleInitial}${lastName}`.trim();
+      const fullName = `${firstName}${middleInitial} ${lastName}`.trim();
       if (fullName) return fullName;
     }
 
@@ -479,10 +479,8 @@ export default function TraineeAnnouncementFeed({
                           <div className="w-7 h-7 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center shadow-sm">
                             <span className="text-white text-xs font-medium">
                               {reply.user_type === "admin"
-                                ? reply.user?.f_name?.charAt(0).toUpperCase()
-                                : reply.trainee_user?.f_name
-                                    ?.charAt(0)
-                                    .toUpperCase()}
+                                ? getAuthorName(reply.user).charAt(0)
+                                : getAuthorName(reply.trainee_user).charAt(0)}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -490,14 +488,10 @@ export default function TraineeAnnouncementFeed({
                               <div className="flex items-center space-x-1">
                                 <span className="font-medium text-gray-900 text-xs">
                                   {reply.user_type === "admin"
-                                    ? reply.user?.f_name +
-                                      " " +
-                                      reply.user?.l_name
-                                    : reply.trainee_user?.f_name +
-                                      " " +
-                                      reply.trainee_user?.l_name}
+                                    ? getAuthorName(reply.user)
+                                    : getAuthorName(reply.trainee_user)}
                                 </span>
-                                {getUserBadge(reply.user?.user_type)}
+                                {getUserBadge(reply.user_type)}
                                 <span className="text-gray-400 text-xs">•</span>
                                 <span className="text-gray-500 text-xs">
                                   {formatDate(reply.created_at)}

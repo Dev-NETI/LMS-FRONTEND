@@ -130,18 +130,31 @@ export default function AnnouncementFeed({
   }) => {
     if (!user) return "Unknown User";
 
-    // For admin users, they might have a 'name' field
-    if (user.user_type === "admin" && user.name) {
-      return user.name;
+    // Try to construct name from f_name and l_name first (works for both admin and trainee)
+    const firstName = user.f_name?.trim() || "";
+    const lastName = user.l_name?.trim() || "";
+
+    if (firstName || lastName) {
+      const middleInitial = user.m_name?.trim()
+        ? ` ${user.m_name.charAt(0)}.`
+        : "";
+      const fullName = `${firstName}${middleInitial} ${lastName}`.trim();
+      if (fullName) return fullName;
     }
 
-    // For trainee users or admin users with separate name fields
-    const firstName = user.f_name || "";
-    const middleInitial = user.m_name ? ` ${user.m_name.charAt(0)}.` : "";
-    const lastName = user.l_name ? ` ${user.l_name}` : "";
-    const fullName = `${firstName}${middleInitial}${lastName}`.trim();
+    // Fallback to 'name' field (mainly for admin users who might have this)
+    if (user.name?.trim()) {
+      return user.name.trim();
+    }
 
-    return fullName || user.name || "Unknown User";
+    // Final fallback based on user type
+    if (user.user_type === "admin") {
+      return "Admin User";
+    } else if (user.user_type === "trainee") {
+      return "Trainee User";
+    }
+
+    return "Unknown User";
   };
 
   const getUserBadge = (userType?: "admin" | "trainee") => {
@@ -816,7 +829,7 @@ export default function AnnouncementFeed({
                                       " " +
                                       reply.trainee_user?.l_name}
                                 </span>
-                                {getUserBadge(reply.user?.user_type)}
+                                {getUserBadge(reply.user_type)}
                                 <span className="text-gray-400 text-xs">•</span>
                                 <span className="text-gray-500 text-xs">
                                   {formatDate(reply.created_at)}
