@@ -1,250 +1,158 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Skeleton } from "@mui/material";
+import {
+  TraineeProgress,
+  TraineeProgressData,
+  ProgressStatistics,
+  getTraineeProgressBySchedule,
+  getCourseProgress,
+  getActivityLog,
+  getStatusColor,
+  getStatusText,
+  formatTimeSpent,
+  getProgressBarColor,
+  ActivityLogEntry,
+} from "@/src/services/traineeProgressService";
 import {
   ChartBarIcon,
-  AcademicCapIcon,
   ClockIcon,
+  UserGroupIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon,
-  MagnifyingGlassIcon,
   EyeIcon,
+  DocumentTextIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-
-interface TraineeProgress {
-  id: number;
-  name: string;
-  email: string;
-  avatar?: string;
-  overallProgress: number;
-  modules: ModuleProgress[];
-  lastActivity: string;
-  status: "On Track" | "Behind" | "At Risk" | "Completed";
-  timeSpent: number; // in hours
-  completedAssignments: number;
-  totalAssignments: number;
-}
-
-interface ModuleProgress {
-  id: number;
-  name: string;
-  progress: number;
-  status: "Not Started" | "In Progress" | "Completed" | "Overdue";
-  dueDate: string;
-  timeSpent: number;
-}
 
 interface ProgressMonitoringProps {
   scheduleId: number;
+  scheduleName?: string;
 }
 
-export default function ProgressMonitoring({ scheduleId }: ProgressMonitoringProps) {
-  const [trainees, setTrainees] = useState<TraineeProgress[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function ProgressMonitoring({
+  scheduleId,
+  scheduleName,
+}: ProgressMonitoringProps) {
+  const [loading, setLoading] = useState(true);
+  const [traineeData, setTraineeData] = useState<TraineeProgressData[]>([]);
+  const [statistics, setStatistics] = useState<ProgressStatistics | null>(null);
+  const [selectedTrainee, setSelectedTrainee] =
+    useState<TraineeProgressData | null>(null);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("progress");
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [selectedTrainee, setSelectedTrainee] = useState<TraineeProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [courseId, setCourseId] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchProgressData = async () => {
-      setIsLoading(true);
-      try {
-        // Mock data - replace with actual API call
-        const mockTrainees: TraineeProgress[] = [
-          {
-            id: 1,
-            name: "John Doe",
-            email: "john.doe@maritime.com",
-            overallProgress: 85,
-            lastActivity: "2024-11-27T14:30:00Z",
-            status: "On Track",
-            timeSpent: 42.5,
-            completedAssignments: 8,
-            totalAssignments: 10,
-            modules: [
-              {
-                id: 1,
-                name: "Safety Fundamentals",
-                progress: 100,
-                status: "Completed",
-                dueDate: "2024-11-20T23:59:59Z",
-                timeSpent: 12.5,
-              },
-              {
-                id: 2,
-                name: "Emergency Procedures",
-                progress: 75,
-                status: "In Progress",
-                dueDate: "2024-11-30T23:59:59Z",
-                timeSpent: 18.0,
-              },
-              {
-                id: 3,
-                name: "Navigation Basics",
-                progress: 60,
-                status: "In Progress",
-                dueDate: "2024-12-05T23:59:59Z",
-                timeSpent: 12.0,
-              },
-            ],
-          },
-          {
-            id: 2,
-            name: "Sarah Johnson",
-            email: "sarah.j@shipping.com",
-            overallProgress: 95,
-            lastActivity: "2024-11-27T16:45:00Z",
-            status: "On Track",
-            timeSpent: 48.0,
-            completedAssignments: 9,
-            totalAssignments: 10,
-            modules: [
-              {
-                id: 1,
-                name: "Safety Fundamentals",
-                progress: 100,
-                status: "Completed",
-                dueDate: "2024-11-20T23:59:59Z",
-                timeSpent: 10.5,
-              },
-              {
-                id: 2,
-                name: "Emergency Procedures",
-                progress: 90,
-                status: "In Progress",
-                dueDate: "2024-11-30T23:59:59Z",
-                timeSpent: 22.0,
-              },
-              {
-                id: 3,
-                name: "Navigation Basics",
-                progress: 85,
-                status: "In Progress",
-                dueDate: "2024-12-05T23:59:59Z",
-                timeSpent: 15.5,
-              },
-            ],
-          },
-          {
-            id: 3,
-            name: "Mike Wilson",
-            email: "m.wilson@oceanline.com",
-            overallProgress: 45,
-            lastActivity: "2024-11-25T08:20:00Z",
-            status: "Behind",
-            timeSpent: 28.0,
-            completedAssignments: 4,
-            totalAssignments: 10,
-            modules: [
-              {
-                id: 1,
-                name: "Safety Fundamentals",
-                progress: 80,
-                status: "In Progress",
-                dueDate: "2024-11-20T23:59:59Z",
-                timeSpent: 15.0,
-              },
-              {
-                id: 2,
-                name: "Emergency Procedures",
-                progress: 30,
-                status: "Behind",
-                dueDate: "2024-11-30T23:59:59Z",
-                timeSpent: 8.0,
-              },
-              {
-                id: 3,
-                name: "Navigation Basics",
-                progress: 0,
-                status: "Not Started",
-                dueDate: "2024-12-05T23:59:59Z",
-                timeSpent: 0,
-              },
-            ],
-          },
-        ];
+    if (scheduleId) {
+      fetchProgressData();
+    }
+  }, [scheduleId, filterStatus]);
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setTrainees(mockTrainees);
-      } catch (error) {
-        console.error("Failed to fetch progress data:", error);
-      } finally {
-        setIsLoading(false);
+  const fetchProgressData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await getTraineeProgressBySchedule(
+        scheduleId!,
+        filterStatus === "all" ? undefined : filterStatus
+      );
+
+      console.log(response);
+      if (response.success) {
+        setStatistics(response.statistics);
+        setCourseId(response.course_id);
+        setTraineeData(response.progress_data);
       }
-    };
-
-    fetchProgressData();
-  }, [scheduleId]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "On Track":
-        return "bg-green-100 text-green-800";
-      case "Behind":
-        return "bg-yellow-100 text-yellow-800";
-      case "At Risk":
-        return "bg-red-100 text-red-800";
-      case "Completed":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+    } catch (error) {
+      console.error("Error fetching progress data:", error);
+      setError("Failed to load progress data");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getProgressColor = (progress: number) => {
-    if (progress >= 80) return "bg-green-500";
-    if (progress >= 60) return "bg-yellow-500";
-    if (progress >= 40) return "bg-orange-500";
-    return "bg-red-500";
+  const viewTraineeDetails = async (trainee: TraineeProgressData) => {
+    try {
+      setSelectedTrainee(trainee);
+
+      // If we need more detailed progress, fetch it
+      if (courseId && trainee.progress.length === 0) {
+        const progressResponse = await getCourseProgress(
+          courseId,
+          trainee.trainee_id
+        );
+        if (progressResponse.success) {
+          const updatedTrainee = {
+            ...trainee,
+            progress: progressResponse.modules,
+          };
+          setSelectedTrainee(updatedTrainee);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching trainee details:", error);
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+  const viewActivityLog = async (progress: TraineeProgress) => {
+    try {
+      const response = await getActivityLog(progress.id);
+      if (response.success) {
+        setActivityLog(response.activity_log || []);
+        setShowActivityModal(true);
+      }
+    } catch (error) {
+      console.error("Error fetching activity log:", error);
+    }
   };
 
-  const filteredTrainees = trainees.filter(trainee => {
-    const matchesSearch = trainee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         trainee.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "All" || trainee.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const getSortedTrainees = () => {
+    return [...traineeData]
+      .filter((trainee) => {
+        const matchesSearch =
+          trainee.trainee_name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          trainee.email.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case "progress":
+            return (
+              b.overall_completion_percentage - a.overall_completion_percentage
+            );
+          case "time":
+            return b.total_time_spent - a.total_time_spent;
+          case "activity":
+            if (!a.last_activity && !b.last_activity) return 0;
+            if (!a.last_activity) return 1;
+            if (!b.last_activity) return -1;
+            return (
+              new Date(b.last_activity).getTime() -
+              new Date(a.last_activity).getTime()
+            );
+          case "name":
+            return a.trainee_name.localeCompare(b.trainee_name);
+          default:
+            return 0;
+        }
+      });
+  };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
-              <Skeleton variant="text" width={100} height={20} />
-              <Skeleton variant="text" width={80} height={32} sx={{ mt: 1 }} />
-            </div>
-          ))}
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-6 border-b">
-            <Skeleton variant="text" width={200} height={24} />
-          </div>
-          <div className="divide-y divide-gray-200">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Skeleton variant="circular" width={40} height={40} />
-                    <div>
-                      <Skeleton variant="text" width={150} height={20} />
-                      <Skeleton variant="text" width={100} height={16} />
-                    </div>
-                  </div>
-                  <Skeleton variant="rectangular" width={100} height={20} />
-                </div>
-              </div>
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-300 rounded w-48 mb-6"></div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-20 bg-gray-200 rounded"></div>
             ))}
           </div>
         </div>
@@ -252,66 +160,109 @@ export default function ProgressMonitoring({ scheduleId }: ProgressMonitoringPro
     );
   }
 
+  const filteredTrainees = getSortedTrainees();
+
   return (
     <div className="space-y-6">
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircleIcon className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">On Track</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {trainees.filter(t => t.status === "On Track").length}
-              </p>
-            </div>
+      {/* Header */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Progress Monitoring
+            </h2>
+            {scheduleName && (
+              <p className="text-sm text-gray-600 mt-1">{scheduleName}</p>
+            )}
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <ClockIcon className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Behind</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {trainees.filter(t => t.status === "Behind").length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-red-100 rounded-lg">
-              <ExclamationTriangleIcon className="w-6 h-6 text-red-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">At Risk</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {trainees.filter(t => t.status === "At Risk").length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <AcademicCapIcon className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Avg Progress</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {Math.round(trainees.reduce((acc, t) => acc + t.overallProgress, 0) / trainees.length)}%
-              </p>
-            </div>
+          <div className="flex space-x-4">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="all">All Status</option>
+              <option value="completed">Completed</option>
+              <option value="in_progress">In Progress</option>
+              <option value="not_started">Not Started</option>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="progress">Sort by Progress</option>
+              <option value="time">Sort by Time Spent</option>
+              <option value="activity">Sort by Last Activity</option>
+              <option value="name">Sort by Name</option>
+            </select>
           </div>
         </div>
       </div>
+
+      {/* Statistics Cards */}
+      {statistics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <UserGroupIcon className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Total Trainees
+                </p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {statistics.total_trainees}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <CheckCircleIcon className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {statistics.completed_trainees}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <ClockIcon className="h-8 w-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Time</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {formatTimeSpent(statistics.total_time_spent)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <ChartBarIcon className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Avg. Completion
+                </p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {statistics.average_completion.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -326,203 +277,336 @@ export default function ProgressMonitoring({ scheduleId }: ProgressMonitoringPro
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="All">All Status</option>
-            <option value="On Track">On Track</option>
-            <option value="Behind">Behind</option>
-            <option value="At Risk">At Risk</option>
-            <option value="Completed">Completed</option>
-          </select>
         </div>
       </div>
 
-      {/* Trainees Progress Table */}
+      {/* Trainee Progress Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Trainee Progress</h3>
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">
+            Trainee Progress
+          </h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trainee
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Overall Progress
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Assignments
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Time Spent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Activity
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTrainees.map((trainee) => (
-                <tr key={trainee.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-blue-600 font-semibold">
-                            {trainee.name.charAt(0)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {trainee.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {trainee.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${getProgressColor(trainee.overallProgress)}`}
-                          style={{ width: `${trainee.overallProgress}%` }}
-                        ></div>
-                      </div>
-                      <span className="ml-2 text-sm font-medium text-gray-900">
-                        {trainee.overallProgress}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {trainee.completedAssignments}/{trainee.totalAssignments}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {Math.round((trainee.completedAssignments / trainee.totalAssignments) * 100)}% complete
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {trainee.timeSpent}h
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(trainee.status)}`}>
-                      {trainee.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(trainee.lastActivity)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedTrainee(trainee)}
-                    >
-                      <EyeIcon className="w-4 h-4 mr-1" />
-                      View Details
-                    </Button>
-                  </td>
+
+        {filteredTrainees.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No trainee progress data available</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trainee
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Progress
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Modules
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Time Spent
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Last Activity
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredTrainees.map((trainee) => (
+                  <tr key={trainee.trainee_id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-blue-600 font-semibold">
+                              {trainee.trainee_name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {trainee.trainee_name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {trainee.email}
+                          </div>
+                          {trainee.rank && (
+                            <div className="text-xs text-gray-400">
+                              {trainee.rank}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-2 mr-3">
+                          <div
+                            className={`h-2 rounded-full ${getProgressBarColor(
+                              trainee.overall_completion_percentage
+                            )}`}
+                            style={{
+                              width: `${trainee.overall_completion_percentage}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 min-w-max">
+                          {trainee.overall_completion_percentage}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {trainee.completed_modules} / {trainee.total_modules}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {trainee.total_modules - trainee.completed_modules}{" "}
+                        remaining
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {formatTimeSpent(trainee.total_time_spent)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {trainee.last_activity
+                          ? new Date(trainee.last_activity).toLocaleDateString()
+                          : "Never"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => viewTraineeDetails(trainee)}
+                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Detailed Progress Modal/Panel */}
+      {/* Trainee Details Modal */}
       {selectedTrainee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {selectedTrainee.name} - Detailed Progress
-                </h3>
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedTrainee(null)}
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-6 border w-11/12 md:w-3/4 lg:w-2/3 max-w-4xl shadow-lg rounded-lg bg-white">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-medium text-gray-900">
+                Progress Details - {selectedTrainee.trainee_name}
+              </h3>
+              <button
+                onClick={() => setSelectedTrainee(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <span className="sr-only">Close</span>
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  Close
-                </Button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Progress Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="text-2xl font-bold text-blue-600">
+                  {selectedTrainee.total_modules}
+                </div>
+                <div className="text-sm text-blue-600">Total Modules</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="text-2xl font-bold text-green-600">
+                  {selectedTrainee.completed_modules}
+                </div>
+                <div className="text-sm text-green-600">Completed</div>
+              </div>
+              <div className="bg-yellow-50 rounded-lg p-4">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {selectedTrainee.in_progress_modules}
+                </div>
+                <div className="text-sm text-yellow-600">In Progress</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-2xl font-bold text-gray-600">
+                  {formatTimeSpent(selectedTrainee.total_time_spent)}
+                </div>
+                <div className="text-sm text-gray-600">Time Spent</div>
               </div>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {selectedTrainee.overallProgress}%
-                  </div>
-                  <div className="text-sm text-gray-500">Overall Progress</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {selectedTrainee.timeSpent}h
-                  </div>
-                  <div className="text-sm text-gray-500">Time Spent</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {selectedTrainee.completedAssignments}/{selectedTrainee.totalAssignments}
-                  </div>
-                  <div className="text-sm text-gray-500">Assignments</div>
-                </div>
-              </div>
 
-              <h4 className="text-lg font-medium text-gray-900 mb-4">Module Progress</h4>
-              <div className="space-y-4">
-                {selectedTrainee.modules.map((module) => (
-                  <div key={module.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h5 className="font-medium text-gray-900">{module.name}</h5>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(module.status)}`}>
-                        {module.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center mb-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${getProgressColor(module.progress)}`}
-                          style={{ width: `${module.progress}%` }}
-                        ></div>
+            {/* Module Progress List */}
+            <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-900">
+                Module Progress
+              </h4>
+              {selectedTrainee.progress.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">
+                  No module progress available
+                </p>
+              ) : (
+                selectedTrainee.progress.map((progress) => (
+                  <div
+                    key={progress.id}
+                    className="border border-gray-200 rounded-lg p-4"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h5 className="text-sm font-medium text-gray-900">
+                          {progress.course_content?.title || "Unknown Module"}
+                        </h5>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                              progress.status
+                            )}`}
+                          >
+                            {getStatusText(progress.status)}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {progress.completion_percentage}% complete
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {formatTimeSpent(progress.time_spent)} spent
+                          </span>
+                          {progress.last_activity && (
+                            <span className="text-xs text-gray-500">
+                              Last:{" "}
+                              {new Date(
+                                progress.last_activity
+                              ).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <span className="ml-2 text-sm font-medium text-gray-900">
-                        {module.progress}%
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>Time spent: {module.timeSpent}h</span>
-                      <span>Due: {formatDate(module.dueDate)}</span>
+                      <button
+                        onClick={() => viewActivityLog(progress)}
+                        className="text-gray-400 hover:text-gray-600 ml-4"
+                        title="View Activity Log"
+                      >
+                        <DocumentTextIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setSelectedTrainee(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Activity Log Modal */}
+      {showActivityModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-6 border w-11/12 md:w-1/2 max-w-2xl shadow-lg rounded-lg bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Activity Log
+              </h3>
+              <button
+                onClick={() => setShowActivityModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <span className="sr-only">Close</span>
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {activityLog.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">
+                  No activity recorded
+                </p>
+              ) : (
+                activityLog.map((entry, index) => (
+                  <div
+                    key={index}
+                    className="border-l-2 border-blue-200 pl-4 py-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {entry.activity}
+                        </p>
+                        {entry.metadata &&
+                          Object.keys(entry.metadata).length > 0 && (
+                            <pre className="text-xs text-gray-600 mt-1 bg-gray-50 p-2 rounded">
+                              {JSON.stringify(entry.metadata, null, 2)}
+                            </pre>
+                          )}
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                        {new Date(entry.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowActivityModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* Empty State */}
-      {filteredTrainees.length === 0 && !isLoading && (
+      {filteredTrainees.length === 0 && !loading && !error && (
         <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
           <ChartBarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No trainees found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No trainees found
+          </h3>
           <p className="text-gray-600">
-            {searchQuery || statusFilter !== "All"
-              ? "Try adjusting your filters to see more results."
+            {searchQuery
+              ? "Try adjusting your search to see more results."
               : "No trainees are enrolled in this schedule yet."}
           </p>
         </div>
