@@ -5,8 +5,8 @@ export interface EnrolledCourse {
   enroledid: number;
   traineeid: number;
   courseid: number;
+  scheduleid: number;
   dateregistered: string;
-  datecompleted: string | null;
   status: string;
   course: {
     coursecode: string;

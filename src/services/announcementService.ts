@@ -88,6 +88,17 @@ export const getAnnouncementsBySchedule = async (scheduleId: number): Promise<{ 
   }
 };
 
+export const getAnnouncementsByScheduleTrainee = async (scheduleId: number): Promise<{ schedule: ScheduleData; announcements: AnnouncementPost[] }> => {
+  try {
+    const response = await api.get(`/api/trainee/schedules/${scheduleId}/announcements`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching announcements:', error);
+    throw error;
+  }
+};
+
+
 export const createAnnouncement = async (data: CreateAnnouncementData): Promise<{ message: string; announcement: AnnouncementPost }> => {
   try {
     const response = await api.post('/api/admin/announcements', data);

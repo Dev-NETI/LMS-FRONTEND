@@ -67,6 +67,22 @@ export const getTrainingMaterialsByCourse = async (courseId: number): Promise<{ 
   }
 };
 
+// Trainee-specific function to get training materials (read-only)
+export const getTrainingMaterialsForTrainee = async (courseId: number): Promise<{ success: boolean; data: TrainingMaterial[] }> => {
+  try {
+    const response = await api.get(`/api/trainee/courses/${courseId}/training-materials`);
+    
+    // Transform the response to match the expected format
+    return {
+      success: response.data.success,
+      data: response.data.materials || []
+    };
+  } catch (error) {
+    console.error('Error fetching training materials for trainee:', error);
+    throw error;
+  }
+};
+
 // Create a new training material
 export const createTrainingMaterial = async (data: CreateTrainingMaterialData): Promise<{ success: boolean; message: string; material: TrainingMaterial }> => {
   try {

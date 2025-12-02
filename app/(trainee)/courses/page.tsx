@@ -8,8 +8,6 @@ import {
   PlayIcon,
   AcademicCapIcon,
   MagnifyingGlassIcon,
-  CheckCircleIcon,
-  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/src/context/AuthContext";
 import {
@@ -127,11 +125,6 @@ export default function CoursesPage() {
                         <h3 className="text-lg font-semibold text-gray-900">
                           {enrolledCourse.course.coursename}
                         </h3>
-                        {enrolledCourse.datecompleted ? (
-                          <CheckCircleIcon className="w-6 h-6 text-green-600" />
-                        ) : (
-                          <ClockIcon className="w-6 h-6 text-blue-600" />
-                        )}
                       </div>
 
                       <div className="space-y-3">
@@ -157,17 +150,13 @@ export default function CoursesPage() {
                         <button
                           onClick={() =>
                             router.push(
-                              `/courses/${enrolledCourse.courseid}/progress`
+                              `/courses/${enrolledCourse.scheduleid}/overview`
                             )
                           }
                           className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mt-4"
                         >
                           <PlayIcon className="w-4 h-4" />
-                          <span>
-                            {enrolledCourse.datecompleted
-                              ? "Review Course"
-                              : "Continue Learning"}
-                          </span>
+                          <span>Open Course</span>
                         </button>
                       </div>
                     </div>

@@ -238,3 +238,17 @@ export const downloadCourseContent = async (id: number, fileName: string): Promi
     throw error;
   }
 };
+
+// Trainee-specific function to get course contents
+export const getCourseContentForTrainee = async (courseId: number): Promise<{ success: boolean; data: CourseContent[] }> => {
+  try {
+    const response = await api.get(`/api/trainee/courses/${courseId}/content`);
+    return {
+      success: response.data.success,
+      data: response.data.contents || response.data.data || []
+    };
+  } catch (error) {
+    console.error('Error fetching course content for trainee:', error);
+    throw error;
+  }
+};
