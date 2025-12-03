@@ -105,6 +105,10 @@ export const getAnnouncementsByScheduleTrainee = async (scheduleId: number): Pro
 export const createAnnouncement = async (data: CreateAnnouncementData): Promise<{ message: string; announcement: AnnouncementPost }> => {
   try {
     const response = await api.post('/api/admin/announcements', data);
+    
+    // Note: Notifications are automatically created by the backend AnnouncementController
+    // No need to create them manually here to avoid duplicates
+    
     return response.data;
   } catch (error) {
     console.error('Error creating announcement:', error);

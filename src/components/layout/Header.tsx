@@ -13,6 +13,7 @@ import {
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/20/solid";
+import NotificationBell from "@/src/components/trainee/NotificationBell";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -42,13 +43,8 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
         {/* Right section */}
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors relative">
-            <BellIcon className="w-6 h-6" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              3
-            </span>
-          </button>
+          {/* Notifications - Only show for trainees */}
+          {user?.user_type === 'trainee' && <NotificationBell />}
 
           {/* Profile dropdown */}
           <div className="relative">

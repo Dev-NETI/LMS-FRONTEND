@@ -114,6 +114,9 @@ export default function AnnouncementFeed({
       setAnnouncements([response.announcement, ...announcements]);
       setNewAnnouncement({ title: "", content: "" });
       setShowNewAnnouncementForm(false);
+      
+      // Show success message - notifications are automatically created by backend
+      console.log("✅ Announcement created! Notifications sent to all enrolled trainees.");
     } catch (error) {
       console.error("Failed to create announcement:", error);
     } finally {
