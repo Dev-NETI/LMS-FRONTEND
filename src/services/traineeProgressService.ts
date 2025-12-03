@@ -104,13 +104,9 @@ export interface ProgressReportResponse {
 }
 
 // Get course progress for a trainee
-export const getCourseProgress = async (courseId: number, traineeId?: number): Promise<CourseProgressResponse> => {
+export const getCourseProgress = async (courseId: number,  scheduleId?: number): Promise<CourseProgressResponse> => {
   try {
-    const endpoint = traineeId 
-      ? `/api/admin/courses/${courseId}/progress/trainee/${traineeId}`
-      : `/api/trainee/courses/${courseId}/progress`;
-    
-    const response = await api.get(endpoint);
+    const response = await api.get(`/api/trainee/courses/${courseId}/progress/${scheduleId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching course progress:', error);

@@ -168,8 +168,11 @@ export const deleteCourseContent = async (id: number): Promise<{ success: boolea
 };
 
 // Helper function to validate files for upload
-export const validateFileForUpload = (file: File, fileType: 'articulate_html' | 'pdf'): { isValid: boolean; error?: string } => {
-  const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+export const validateFileForUpload = (
+  file: File,
+  fileType: 'articulate_html' | 'pdf'
+): { isValid: boolean; error?: string } => {
+  const maxSize = 500 * 1024 * 1024; // 500MB in bytes
 
   if (fileType === 'articulate_html') {
     const allowedTypes = ['application/zip', 'application/x-zip-compressed'];
@@ -184,7 +187,7 @@ export const validateFileForUpload = (file: File, fileType: 'articulate_html' | 
   }
 
   if (file.size > maxSize) {
-    return { isValid: false, error: 'File size must be less than 100MB' };
+    return { isValid: false, error: 'File size must be less than 500MB' };
   }
 
   return { isValid: true };
