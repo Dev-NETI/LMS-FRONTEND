@@ -53,7 +53,7 @@ export default function TraineeProgressTracking({
       setError(null);
 
       try {
-        const response = await getCourseProgress(courseId);
+        const response = await getCourseProgress(courseId, scheduleId);
         if (response.success) {
           setProgressData(response);
         } else {

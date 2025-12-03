@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Course } from "./types";
 import {
   CourseContent,
   getCourseContentsByCourse,
@@ -24,10 +23,6 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 
-interface CourseContentProps {
-  course: Course;
-}
-
 type ContentFormData = {
   title: string;
   description: string;
@@ -38,7 +33,7 @@ type ContentFormData = {
   order: number;
 };
 
-export default function CourseContentPage({ course }: CourseContentProps) {
+export default function CourseContentPage({ course }: { course: any }) {
   const [contents, setContents] = useState<CourseContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
