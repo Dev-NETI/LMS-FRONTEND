@@ -111,7 +111,7 @@ export default function TrainingMaterials({
     try {
       await authService.initCSRF();
       const url = await viewTrainingMaterial(material.id);
-      window.open(url, '_blank');
+      window.open(url, "_blank");
     } catch (error) {
       console.error("Failed to view training material:", error);
     }

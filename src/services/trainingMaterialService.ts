@@ -68,17 +68,13 @@ export const getTrainingMaterialsByCourse = async (courseId: number): Promise<{ 
 };
 
 // Trainee-specific function to get training materials (read-only)
-export const getTrainingMaterialsForTrainee = async (courseId: number): Promise<{ success: boolean; data: TrainingMaterial[] }> => {
+
+export const getTrainingMaterialsByCourseTrainee = async (courseId: number): Promise<{ success: boolean; course_id: number; materials: TrainingMaterial[] } & TrainingMaterialsByCategory> => {
   try {
     const response = await api.get(`/api/trainee/courses/${courseId}/training-materials`);
-    
-    // Transform the response to match the expected format
-    return {
-      success: response.data.success,
-      data: response.data.materials || []
-    };
+    return response.data;
   } catch (error) {
-    console.error('Error fetching training materials for trainee:', error);
+    console.error('Error fetching training materials by course:', error);
     throw error;
   }
 };
@@ -165,6 +161,34 @@ export const validatePdfFile = (file: File): { isValid: boolean; error?: string 
 export const viewTrainingMaterial = async (id: number): Promise<string> => {
   try {
     const response = await api.get(`/api/admin/training-materials/${id}/view`, {
+      responseType: 'blob',
+    });
+    
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    return url;
+  } catch (error) {
+    console.error('Error viewing training material:', error);
+    throw error;
+  }
+};
+
+export const viewTrainingMaterialTrainee = async (id: number): Promise<string> => {
+  try {
+    const response = await api.get(`/api/trainee/training-materials/${id}/view`, {
+      responseType: 'blob',
+    });
+    
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    return url;
+  } catch (error) {
+    console.error('Error viewing training material:', error);
+    throw error;
+  }
+};
+
+export const viewTrainingMaterialTraineeWithCourse = async (courseId: number, materialId: number): Promise<string> => {
+  try {
+    const response = await api.get(`/api/trainee/courses/${courseId}/training-materials/${materialId}/view`, {
       responseType: 'blob',
     });
     

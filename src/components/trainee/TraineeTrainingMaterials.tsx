@@ -1,18 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@mui/material";
 import {
-  DocumentTextIcon,
-  DocumentArrowDownIcon,
+  DocumentIcon,
   EyeIcon,
-  ClockIcon,
   FolderIcon,
-  MagnifyingGlassIcon,
+  CalendarIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
+import { DocumentIcon as DocumentSolidIcon } from "@heroicons/react/24/solid";
 import {
+  getTrainingMaterialsByCourseTrainee,
+  viewTrainingMaterialTrainee,
   TrainingMaterial,
-  getTrainingMaterialsForTrainee,
 } from "@/src/services/trainingMaterialService";
+import { authService } from "@/src/services/authService";
 
 interface TraineeTrainingMaterialsProps {
   courseId: number;
@@ -22,30 +26,22 @@ export default function TraineeTrainingMaterials({
   courseId,
 }: TraineeTrainingMaterialsProps) {
   const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<
+    "all" | "handout" | "document" | "manual"
+  >("all");
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<string>("created_at");
 
   useEffect(() => {
     const fetchMaterials = async () => {
       if (!courseId) return;
 
       setIsLoading(true);
-      setError(null);
-
       try {
-        const response = await getTrainingMaterialsForTrainee(courseId);
-        if (response.success && response.data) {
-          setMaterials(response.data);
-        } else {
-          setError("Failed to fetch training materials");
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch training materials";
-        setError(errorMessage);
-        console.error("Error fetching training materials:", err);
+        await authService.initCSRF();
+        const response = await getTrainingMaterialsByCourseTrainee(courseId);
+        setMaterials(response.materials || []);
+      } catch (error) {
+        console.error("Failed to fetch training materials:", error);
       } finally {
         setIsLoading(false);
       }
@@ -54,248 +50,275 @@ export default function TraineeTrainingMaterials({
     fetchMaterials();
   }, [courseId]);
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    switch (extension) {
-      case 'pdf':
-        return <DocumentTextIcon className="w-6 h-6 text-red-500" />;
-      case 'doc':
-      case 'docx':
-        return <DocumentTextIcon className="w-6 h-6 text-blue-500" />;
-      case 'xls':
-      case 'xlsx':
-        return <DocumentTextIcon className="w-6 h-6 text-green-500" />;
-      case 'ppt':
-      case 'pptx':
-        return <DocumentTextIcon className="w-6 h-6 text-orange-500" />;
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "handout":
+        return <DocumentSolidIcon className="w-5 h-5 text-blue-600" />;
+      case "document":
+        return <DocumentIcon className="w-5 h-5 text-green-600" />;
+      case "manual":
+        return <DocumentIcon className="w-5 h-5 text-purple-600" />;
       default:
-        return <DocumentArrowDownIcon className="w-6 h-6 text-gray-500" />;
+        return <DocumentIcon className="w-5 h-5 text-gray-600" />;
     }
   };
 
-  const handleViewMaterial = (material: TrainingMaterial) => {
-    const viewUrl = `/api/trainee/training-materials/${material.id}/view`;
-    window.open(viewUrl, '_blank');
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "handout":
+        return "bg-blue-100 text-blue-800";
+      case "document":
+        return "bg-green-100 text-green-800";
+      case "manual":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
 
-  const handleDownloadMaterial = (material: TrainingMaterial) => {
-    const downloadUrl = `/api/trainee/training-materials/${material.id}/download`;
-    window.open(downloadUrl, '_blank');
+  const filteredMaterials =
+    selectedCategory === "all"
+      ? materials
+      : materials.filter(
+          (material) => material.file_category_type === selectedCategory
+        );
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  const getFilteredAndSortedMaterials = () => {
-    return materials
-      .filter(material =>
-        material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        material.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .sort((a, b) => {
-        switch (sortBy) {
-          case 'title':
-            return a.title.localeCompare(b.title);
-          case 'file_size':
-            return (b.file_size || 0) - (a.file_size || 0);
-          case 'created_at':
-          default:
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        }
-      });
+  const formatFileSize = (bytes: number): string => {
+    const units = ["B", "KB", "MB", "GB"];
+    let size = bytes;
+    let unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return `${size.toFixed(2)} ${units[unitIndex]}`;
+  };
+
+  const handleView = async (material: TrainingMaterial) => {
+    try {
+      await authService.initCSRF();
+      const url = await viewTrainingMaterialTrainee(material.id);
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("Failed to view training material:", error);
+    }
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="animate-pulse">
-            <div className="flex items-center mb-6">
-              <div className="w-8 h-8 bg-gray-300 rounded mr-3"></div>
-              <div className="h-6 bg-gray-300 rounded w-48"></div>
-            </div>
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4 flex-1">
-                      <div className="w-12 h-12 bg-gray-300 rounded"></div>
-                      <div className="flex-1">
-                        <div className="h-5 bg-gray-300 rounded w-64 mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-32"></div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <div className="w-16 h-8 bg-gray-300 rounded"></div>
-                      <div className="w-20 h-8 bg-gray-300 rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="text-center py-8">
-          <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Failed to load training materials
-          </h3>
-          <p className="text-gray-600">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const filteredMaterials = getFilteredAndSortedMaterials();
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center mb-6">
-          <div className="p-2 bg-purple-100 rounded-full mr-3">
-            <FolderIcon className="w-6 h-6 text-purple-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Training Materials
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Download and access supplementary course materials
-            </p>
-          </div>
+        <div className="flex justify-between items-center">
+          <Skeleton variant="text" width={200} height={32} />
+          <Skeleton variant="rectangular" width={120} height={36} />
         </div>
 
-        {/* Search and Filters */}
-        <div className="mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search materials..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="flex space-x-4">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
-              >
-                <option value="created_at">Sort by Date</option>
-                <option value="title">Sort by Title</option>
-                <option value="file_size">Sort by Size</option>
-              </select>
-            </div>
-          </div>
+        <div className="flex gap-2">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton
+              key={index}
+              variant="rectangular"
+              width={80}
+              height={32}
+            />
+          ))}
         </div>
 
-        {materials.length === 0 ? (
-          <div className="text-center py-12">
-            <FolderIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No training materials available
-            </h3>
-            <p className="text-gray-600">
-              Training materials will be available here when your instructor uploads them.
-            </p>
-          </div>
-        ) : filteredMaterials.length === 0 ? (
-          <div className="text-center py-8">
-            <MagnifyingGlassIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No materials found
-            </h3>
-            <p className="text-gray-600">
-              Try adjusting your search to find what you're looking for.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredMaterials.map((material, index) => (
-              <div
-                key={material.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className="flex-shrink-0">
-                      {getFileIcon(material.file_name)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {material.title}
-                        </h3>
-                        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                          {material.file_name.split('.').pop()?.toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      {material.description && (
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {material.description}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <ClockIcon className="w-4 h-4" />
-                          <span>
-                            Uploaded {new Date(material.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {material.file_size_human && (
-                          <span>{material.file_size_human}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2 ml-4">
-                    <button
-                      onClick={() => handleViewMaterial(material)}
-                      className="flex items-center space-x-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
-                    >
-                      <EyeIcon className="w-4 h-4" />
-                      <span>View</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleDownloadMaterial(material)}
-                      className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      <DocumentArrowDownIcon className="w-4 h-4" />
-                      <span>Download</span>
-                    </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-lg border border-gray-200 p-6"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <Skeleton variant="rounded" width={40} height={40} />
+                  <div>
+                    <Skeleton variant="text" width={120} height={20} />
+                    <Skeleton variant="text" width={80} height={16} />
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <Skeleton variant="text" width="100%" height={16} />
+              <Skeleton variant="text" width="80%" height={16} sx={{ mt: 1 }} />
+              <div className="mt-4 flex gap-2">
+                <Skeleton variant="rectangular" width={80} height={32} />
+                <Skeleton variant="rectangular" width={60} height={32} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-        {/* Materials Summary */}
-        {materials.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                {filteredMaterials.length} of {materials.length} materials shown
-              </span>
-              <span>
-                Total size: {materials.reduce((total, material) => total + (material.file_size || 0), 0).toLocaleString()} bytes
-              </span>
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">
+          Training Materials
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Access course handouts, manuals, and reference materials
+        </p>
+      </div>
+
+      {/* Category Filter */}
+      <div className="flex gap-2 overflow-x-auto">
+        <button
+          onClick={() => setSelectedCategory("all")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+            selectedCategory === "all"
+              ? "bg-blue-100 text-blue-700"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          All Materials ({materials.length})
+        </button>
+        <button
+          onClick={() => setSelectedCategory("handout")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+            selectedCategory === "handout"
+              ? "bg-blue-100 text-blue-700"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Handouts (
+          {materials.filter((m) => m.file_category_type === "handout").length})
+        </button>
+        <button
+          onClick={() => setSelectedCategory("document")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+            selectedCategory === "document"
+              ? "bg-green-100 text-green-700"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Documents (
+          {materials.filter((m) => m.file_category_type === "document").length})
+        </button>
+        <button
+          onClick={() => setSelectedCategory("manual")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+            selectedCategory === "manual"
+              ? "bg-purple-100 text-purple-700"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Manuals (
+          {materials.filter((m) => m.file_category_type === "manual").length})
+        </button>
+      </div>
+
+      {/* Materials Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredMaterials.map((material) => (
+          <div
+            key={material.id}
+            className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+          >
+            {/* Header */}
+            <div className="p-6 pb-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gray-50 rounded-lg">
+                    {getCategoryIcon(material.file_category_type)}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-900 leading-tight">
+                      {material.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {material.file_name}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Category Badge */}
+              <div className="mb-3">
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(
+                    material.file_category_type
+                  )}`}
+                >
+                  {material.file_category_type.charAt(0).toUpperCase() +
+                    material.file_category_type.slice(1)}
+                </span>
+              </div>
+
+              {/* Description */}
+              <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                {material.description}
+              </p>
+
+              {/* File Info */}
+              <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                <span>
+                  {material.file_type.split("/").pop()?.toUpperCase()} •{" "}
+                  {formatFileSize(material.file_size)}
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                {material.uploaded_by && (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <UserIcon className="w-3 h-3 mr-1" />
+                    {material.uploaded_by.f_name} {material.uploaded_by.l_name}
+                  </div>
+                )}
+                <div className="flex items-center text-xs text-gray-500">
+                  <CalendarIcon className="w-3 h-3 mr-1" />
+                  {formatDate(material.created_at)}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleView(material)}
+                  className="flex-1 text-xs"
+                >
+                  <EyeIcon className="w-4 h-4 mr-1" />
+                  View
+                </Button>
+              </div>
             </div>
           </div>
-        )}
+        ))}
       </div>
+
+      {/* Empty State */}
+      {filteredMaterials.length === 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+          <FolderIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No materials found
+          </h3>
+          <p className="text-gray-600">
+            {selectedCategory === "all"
+              ? "No training materials are available for this course."
+              : `No ${selectedCategory} materials found.`}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
