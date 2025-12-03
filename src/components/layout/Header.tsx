@@ -2,11 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import {
-  Bars3Icon,
-  BellIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 import {
   ChevronDownIcon,
   UserIcon,
@@ -37,14 +33,16 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
           <div className="hidden lg:flex flex-col">
             <h1 className="text-xl font-bold text-blue-600">NETI LMS</h1>
-            <p className="text-xs text-gray-500 italic -mt-1">Learning Management System</p>
+            <p className="text-xs text-gray-500 italic -mt-1">
+              Learning Management System
+            </p>
           </div>
         </div>
 
         {/* Right section */}
         <div className="flex items-center space-x-4">
           {/* Notifications - Only show for trainees */}
-          {user?.user_type === 'trainee' && <NotificationBell />}
+          {user?.user_type === "trainee" && <NotificationBell />}
 
           {/* Profile dropdown */}
           <div className="relative">
