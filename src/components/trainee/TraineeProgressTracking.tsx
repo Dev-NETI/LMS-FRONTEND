@@ -11,6 +11,11 @@ import {
   CalendarIcon,
   EyeIcon,
   DocumentArrowDownIcon,
+  FilmIcon,
+  XMarkIcon,
+  ArrowTopRightOnSquareIcon,
+  PauseIcon,
+  StopIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckSolid } from "@heroicons/react/24/solid";
 import {
@@ -24,6 +29,13 @@ import {
   getStatusText,
   getProgressBarColor,
 } from "@/src/services/traineeProgressService";
+import {
+  CourseContent,
+  getCourseContentForTrainee,
+  getArticulateContentForTrainee,
+  viewCourseContent,
+  downloadCourseContent,
+} from "@/src/services/courseContentService";
 import { useAuth } from "@/src/context/AuthContext";
 
 interface TraineeProgressTrackingProps {
@@ -44,33 +56,86 @@ export default function TraineeProgressTracking({
     null
   );
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [courseContents, setCourseContents] = useState<CourseContent[]>([]);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [articulateViewer, setArticulateViewer] = useState<{
+    isOpen: boolean;
+    url: string;
+    title: string;
+    contentId?: number;
+    startTime?: number;
+  }>({
+    isOpen: false,
+    url: "",
+    title: "",
+    contentId: undefined,
+    startTime: undefined,
+  });
+  const [viewingContent, setViewingContent] = useState<{
+    contentId: number;
+    startTime: number;
+  } | null>(null);
 
   useEffect(() => {
-    const fetchProgress = async () => {
+    const fetchData = async () => {
       if (!user || !courseId) return;
+
+      console.log(user);
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await getCourseProgress(courseId, scheduleId);
-        if (response.success) {
-          setProgressData(response);
+        // Fetch both progress and course contents
+        const [progressResponse, contentResponse] = await Promise.all([
+          getCourseProgress(courseId, scheduleId),
+          getCourseContentForTrainee(courseId),
+        ]);
+
+        if (progressResponse.success) {
+          setProgressData(progressResponse);
         } else {
           setError("Failed to load progress data");
         }
+
+        if (contentResponse.success) {
+          setCourseContents(contentResponse.data);
+        }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch progress";
+          err instanceof Error ? err.message : "Failed to fetch data";
         setError(errorMessage);
-        console.error("Error fetching progress:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProgress();
-  }, [user, courseId]);
+    fetchData();
+  }, [user, courseId, scheduleId]);
+
+  // Handle Escape key to close modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (articulateViewer.isOpen) {
+          closeArticulateViewer();
+        } else if (selectedModule) {
+          setSelectedModule(null);
+        }
+      }
+    };
+
+    if (articulateViewer.isOpen || selectedModule) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden"; // Prevent background scrolling
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "auto";
+    };
+  }, [articulateViewer.isOpen, selectedModule]);
 
   const handleStartModule = async (moduleId: number) => {
     if (!user) return;
@@ -78,13 +143,25 @@ export default function TraineeProgressTracking({
     setActionLoading(moduleId);
     try {
       const response = await markModuleAsStarted({
-        trainee_id: user.traineeid,
+        trainee_id: user.id,
         course_content_id: moduleId,
       });
 
       if (response.success) {
+        // Start time tracking
+        setViewingContent({
+          contentId: moduleId,
+          startTime: Date.now(),
+        });
+
+        // Find and launch the content
+        const content = courseContents.find((c) => c.id === moduleId);
+        if (content) {
+          await handleContentView(content);
+        }
+
         // Refresh progress data
-        const updatedProgress = await getCourseProgress(courseId);
+        const updatedProgress = await getCourseProgress(courseId, scheduleId);
         if (updatedProgress.success) {
           setProgressData(updatedProgress);
         }
@@ -96,20 +173,49 @@ export default function TraineeProgressTracking({
     }
   };
 
-  const handleCompleteModule = async (moduleId: number, timeSpent?: number) => {
+  const handleCompleteModule = async (
+    moduleId: number,
+    customTimeSpent?: number
+  ) => {
     if (!user) return;
 
     setActionLoading(moduleId);
     try {
+      // Calculate time spent if currently viewing this content
+      let timeSpent = customTimeSpent;
+      if (!timeSpent && viewingContent?.contentId === moduleId) {
+        const timeElapsed = Math.floor(
+          (Date.now() - viewingContent.startTime) / 60000
+        ); // Convert to minutes
+        timeSpent = Math.max(1, timeElapsed); // Minimum 1 minute
+      }
+
       const response = await markModuleAsCompleted({
-        trainee_id: user.traineeid,
+        trainee_id: user.id,
         course_content_id: moduleId,
         time_spent: timeSpent,
       });
 
       if (response.success) {
+        // Clear viewing content tracking
+        setViewingContent(null);
+
+        // Close Articulate viewer if open
+        if (
+          articulateViewer.isOpen &&
+          articulateViewer.contentId === moduleId
+        ) {
+          setArticulateViewer({
+            isOpen: false,
+            url: "",
+            title: "",
+            contentId: undefined,
+            startTime: undefined,
+          });
+        }
+
         // Refresh progress data
-        const updatedProgress = await getCourseProgress(courseId);
+        const updatedProgress = await getCourseProgress(courseId, scheduleId);
         if (updatedProgress.success) {
           setProgressData(updatedProgress);
         }
@@ -121,16 +227,81 @@ export default function TraineeProgressTracking({
     }
   };
 
-  const getModuleIcon = (status: string, contentType?: string) => {
+  const handleContentView = async (content: CourseContent) => {
+    if (content.content_type === "url") {
+      window.open(content.url, "_blank");
+    } else if (content.file_type === "articulate_html") {
+      try {
+        const response = await getArticulateContentForTrainee(content.id);
+        if (response.success) {
+          setArticulateViewer({
+            isOpen: true,
+            url: response.index_url,
+            title: response.title,
+            contentId: response.content_id,
+            startTime: Date.now(),
+          });
+        }
+      } catch (error) {
+        console.error("Error viewing Articulate content:", error);
+        setError("Failed to load Articulate content");
+      }
+    } else {
+      try {
+        const url = await viewCourseContent(content.id);
+        window.open(url, "_blank");
+      } catch (error) {
+        console.error("Error viewing content:", error);
+        setError("Failed to view content");
+      }
+    }
+  };
+
+  const closeArticulateViewer = () => {
+    const contentId = articulateViewer.contentId;
+    const startTime = articulateViewer.startTime;
+
+    setArticulateViewer({
+      isOpen: false,
+      url: "",
+      title: "",
+      contentId: undefined,
+      startTime: undefined,
+    });
+
+    // Update time spent if this was being tracked
+    if (contentId && startTime && viewingContent?.contentId === contentId) {
+      const timeElapsed = Math.floor((Date.now() - startTime) / 60000); // Convert to minutes
+      setViewingContent((prev) =>
+        prev ? { ...prev, startTime: Date.now() - timeElapsed * 60000 } : null
+      );
+    }
+  };
+
+  const openInNewWindow = () => {
+    if (articulateViewer.url) {
+      window.open(articulateViewer.url, "_blank");
+    }
+  };
+
+  const getContentIcon = (content: CourseContent, status?: string) => {
     if (status === "completed") {
       return <CheckSolid className="w-6 h-6 text-green-600" />;
     }
 
-    if (contentType === "file") {
-      return <DocumentArrowDownIcon className="w-6 h-6 text-blue-500" />;
+    if (content.content_type === "url") {
+      return <BookOpenIcon className="w-6 h-6 text-blue-500" />;
     }
 
-    return <BookOpenIcon className="w-6 h-6 text-gray-400" />;
+    if (content.file_type === "articulate_html") {
+      return <FilmIcon className="w-6 h-6 text-purple-500" />;
+    }
+
+    return <DocumentArrowDownIcon className="w-6 h-6 text-gray-500" />;
+  };
+
+  const getContentProgress = (contentId: number) => {
+    return progressData?.modules.find((m) => m.course_content_id === contentId);
   };
 
   if (isLoading) {
@@ -285,17 +456,17 @@ export default function TraineeProgressTracking({
         )}
       </div>
 
-      {/* Module List */}
+      {/* Course Content List */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Course Modules
+          Course Content
         </h3>
 
-        {modules.length === 0 ? (
+        {courseContents.length === 0 ? (
           <div className="text-center py-8">
             <BookOpenIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h4 className="text-lg font-medium text-gray-900 mb-2">
-              No modules available
+              No content available
             </h4>
             <p className="text-gray-600">
               Course content will appear here when it becomes available.
@@ -303,106 +474,170 @@ export default function TraineeProgressTracking({
           </div>
         ) : (
           <div className="space-y-4">
-            {modules.map((module, index) => (
-              <div
-                key={module.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className="flex-shrink-0">
-                      {getModuleIcon(
-                        module.status,
-                        module.course_content?.content_type
-                      )}
-                    </div>
+            {courseContents
+              .sort((a, b) => a.order - b.order)
+              .map((content, index) => {
+                const progress = getContentProgress(content.id);
+                const isCurrentlyViewing =
+                  viewingContent?.contentId === content.id;
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="font-medium text-gray-900 truncate">
-                          {index + 1}.{" "}
-                          {module.course_content?.title ||
-                            `Module ${index + 1}`}
-                        </h4>
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                            module.status
-                          )}`}
-                        >
-                          {getStatusText(module.status)}
-                        </span>
-                      </div>
+                return (
+                  <div
+                    key={content.id}
+                    className={`border rounded-lg p-4 hover:shadow-sm transition-all ${
+                      isCurrentlyViewing
+                        ? "border-blue-300 bg-blue-50"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-medium text-sm">
+                            {index + 1}
+                          </span>
+                        </div>
 
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span>{module.completion_percentage}% complete</span>
-                        <span>{formatTimeSpent(module.time_spent)} spent</span>
-                        {module.last_activity && (
-                          <div className="flex items-center space-x-1">
-                            <CalendarIcon className="w-3 h-3" />
-                            <span>
-                              Last:{" "}
-                              {new Date(
-                                module.last_activity
-                              ).toLocaleDateString()}
-                            </span>
+                        <div className="flex-shrink-0">
+                          {getContentIcon(content, progress?.status)}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h4 className="font-medium text-gray-900 truncate">
+                              {content.title}
+                            </h4>
+                            {progress && (
+                              <span
+                                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                                  progress.status
+                                )}`}
+                              >
+                                {getStatusText(progress.status)}
+                              </span>
+                            )}
+                            {content.content_type === "url" && (
+                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-600">
+                                External Link
+                              </span>
+                            )}
+                            {content.file_type === "articulate_html" && (
+                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-600">
+                                Articulate
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Progress Bar for Individual Module */}
-                      <div className="mt-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(
-                              module.completion_percentage
-                            )}`}
-                            style={{
-                              width: `${module.completion_percentage}%`,
-                            }}
-                          ></div>
+                          {content.description && (
+                            <p className="text-sm text-gray-600 mb-2">
+                              {content.description}
+                            </p>
+                          )}
+
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            {progress && (
+                              <>
+                                <span>
+                                  {progress.completion_percentage}% complete
+                                </span>
+                                <span>
+                                  {formatTimeSpent(progress.time_spent)} spent
+                                </span>
+                                {progress.last_activity && (
+                                  <div className="flex items-center space-x-1">
+                                    <CalendarIcon className="w-3 h-3" />
+                                    <span>
+                                      Last:{" "}
+                                      {new Date(
+                                        progress.last_activity
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            {content.file_size && (
+                              <span>{content.file_size_human}</span>
+                            )}
+                            {isCurrentlyViewing && (
+                              <span className="text-blue-600 font-medium">
+                                Currently viewing...
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Progress Bar */}
+                          {progress && (
+                            <div className="mt-2">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(
+                                    progress.completion_percentage
+                                  )}`}
+                                  style={{
+                                    width: `${progress.completion_percentage}%`,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
+
+                      <div className="flex items-center space-x-2 ml-4">
+                        {(!progress || progress.status === "not_started") && (
+                          <button
+                            onClick={() => handleStartModule(content.id)}
+                            disabled={actionLoading === content.id}
+                            className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          >
+                            {content.file_type === "articulate_html" ? (
+                              <PlayIcon className="w-4 h-4" />
+                            ) : (
+                              <PlayIcon className="w-4 h-4" />
+                            )}
+                            <span>Start</span>
+                          </button>
+                        )}
+
+                        {progress && progress.status === "in_progress" && (
+                          <>
+                            <button
+                              onClick={() => handleContentView(content)}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors"
+                            >
+                              {content.file_type === "articulate_html" ? (
+                                <PlayIcon className="w-4 h-4" />
+                              ) : (
+                                <EyeIcon className="w-4 h-4" />
+                              )}
+                              <span>Continue</span>
+                            </button>
+                            <button
+                              onClick={() => handleCompleteModule(content.id)}
+                              disabled={actionLoading === content.id}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                            >
+                              <CheckCircleIcon className="w-4 h-4" />
+                              <span>Complete</span>
+                            </button>
+                          </>
+                        )}
+
+                        {progress && progress.status === "completed" && (
+                          <button
+                            onClick={() => handleContentView(content)}
+                            className="flex items-center space-x-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+                          >
+                            <EyeIcon className="w-4 h-4" />
+                            <span>Review</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-2 ml-4">
-                    {module.status === "not_started" && (
-                      <button
-                        onClick={() =>
-                          handleStartModule(module.course_content_id)
-                        }
-                        disabled={actionLoading === module.course_content_id}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-                      >
-                        <PlayIcon className="w-4 h-4" />
-                        <span>Start</span>
-                      </button>
-                    )}
-
-                    {module.status === "in_progress" && (
-                      <button
-                        onClick={() =>
-                          handleCompleteModule(module.course_content_id)
-                        }
-                        disabled={actionLoading === module.course_content_id}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-                      >
-                        <CheckCircleIcon className="w-4 h-4" />
-                        <span>Complete</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => setSelectedModule(module)}
-                      className="flex items-center space-x-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
-                    >
-                      <EyeIcon className="w-4 h-4" />
-                      <span>View</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
           </div>
         )}
       </div>
@@ -507,6 +742,67 @@ export default function TraineeProgressTracking({
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Articulate Content Viewer Modal */}
+      {articulateViewer.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative min-h-full flex items-center justify-center p-4">
+            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <h4 className="text-lg font-medium text-gray-900">
+                    {articulateViewer.title}
+                  </h4>
+                  {viewingContent?.contentId === articulateViewer.contentId && (
+                    <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                      Time tracking active
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={openInNewWindow}
+                    className="p-2 text-gray-400 hover:text-blue-600"
+                    title="Open in new window"
+                  >
+                    <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                  </button>
+                  {articulateViewer.contentId && (
+                    <button
+                      onClick={() =>
+                        handleCompleteModule(articulateViewer.contentId!)
+                      }
+                      disabled={actionLoading === articulateViewer.contentId}
+                      className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                    >
+                      <CheckCircleIcon className="w-4 h-4" />
+                      <span>Mark Complete</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={closeArticulateViewer}
+                    className="p-2 text-gray-400 hover:text-gray-600"
+                    title="Close"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="relative" style={{ height: "calc(90vh - 80px)" }}>
+                <iframe
+                  src={articulateViewer.url}
+                  className="w-full h-full border-none"
+                  title={articulateViewer.title}
+                  allow="fullscreen"
+                />
+              </div>
             </div>
           </div>
         </div>
