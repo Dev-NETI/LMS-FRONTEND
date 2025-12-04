@@ -10,6 +10,8 @@ import {
   deleteCourseContent,
   downloadCourseContent,
   viewCourseContent,
+  getArticulateContent,
+  cleanupArticulateContent,
 } from "@/src/services/courseContentService";
 import {
   PlusIcon,
@@ -21,6 +23,8 @@ import {
   LinkIcon,
   FilmIcon,
   XMarkIcon,
+  PlayIcon,
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 
 type ContentFormData = {
@@ -49,20 +53,35 @@ export default function CourseContentPage({ course }: { course: any }) {
   });
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [articulateViewer, setArticulateViewer] = useState<{
+    isOpen: boolean;
+    url: string;
+    title: string;
+    contentId?: number;
+  }>({
+    isOpen: false,
+    url: "",
+    title: "",
+    contentId: undefined,
+  });
 
   useEffect(() => {
     fetchCourseContents();
   }, [course.id]);
 
-  // Handle Escape key to close modal
+  // Handle Escape key to close modals
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && showForm && !submitLoading) {
-        closeModal();
+      if (e.key === "Escape") {
+        if (articulateViewer.isOpen) {
+          closeArticulateViewer();
+        } else if (showForm && !submitLoading) {
+          closeModal();
+        }
       }
     };
 
-    if (showForm) {
+    if (showForm || articulateViewer.isOpen) {
       document.addEventListener("keydown", handleEscape);
       document.body.style.overflow = "hidden"; // Prevent background scrolling
     }
@@ -71,7 +90,7 @@ export default function CourseContentPage({ course }: { course: any }) {
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "auto";
     };
-  }, [showForm, submitLoading]);
+  }, [showForm, submitLoading, articulateViewer.isOpen]);
 
   const fetchCourseContents = async () => {
     try {
@@ -199,6 +218,23 @@ export default function CourseContentPage({ course }: { course: any }) {
   const handleView = async (content: CourseContent) => {
     if (content.content_type === "url") {
       window.open(content.url, "_blank");
+    } else if (content.file_type === "articulate_html") {
+      try {
+        const response = await getArticulateContent(content.id);
+
+        console.log(response);
+        if (response.success) {
+          setArticulateViewer({
+            isOpen: true,
+            url: response.index_url,
+            title: response.title,
+            contentId: response.content_id,
+          });
+        }
+      } catch (error) {
+        console.error("Error viewing Articulate content:", error);
+        setError("Failed to load Articulate content");
+      }
     } else {
       try {
         const url = await viewCourseContent(content.id);
@@ -218,6 +254,31 @@ export default function CourseContentPage({ course }: { course: any }) {
     } catch (error) {
       console.error("Error downloading content:", error);
       setError("Failed to download content");
+    }
+  };
+
+  const closeArticulateViewer = async () => {
+    const contentId = articulateViewer.contentId;
+    setArticulateViewer({
+      isOpen: false,
+      url: "",
+      title: "",
+      contentId: undefined,
+    });
+
+    // Optional cleanup - uncomment if you want to automatically cleanup extracted files
+    // if (contentId) {
+    //   try {
+    //     await cleanupArticulateContent(contentId);
+    //   } catch (error) {
+    //     console.error("Error cleaning up Articulate content:", error);
+    //   }
+    // }
+  };
+
+  const openInNewWindow = () => {
+    if (articulateViewer.url) {
+      window.open(articulateViewer.url, "_blank");
     }
   };
 
@@ -491,6 +552,48 @@ export default function CourseContentPage({ course }: { course: any }) {
         </div>
       )}
 
+      {/* Articulate Content Viewer Modal */}
+      {articulateViewer.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative min-h-full flex items-center justify-center p-4">
+            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-4 border-b border-gray-200">
+                <h4 className="text-lg font-medium text-gray-900">
+                  {articulateViewer.title}
+                </h4>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={openInNewWindow}
+                    className="p-2 text-gray-400 hover:text-blue-600"
+                    title="Open in new window"
+                  >
+                    <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={closeArticulateViewer}
+                    className="p-2 text-gray-400 hover:text-gray-600"
+                    title="Close"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="relative" style={{ height: "calc(90vh - 80px)" }}>
+                <iframe
+                  src={articulateViewer.url}
+                  className="w-full h-full border-none"
+                  title={articulateViewer.title}
+                  allow="fullscreen"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         {contents.length === 0 ? (
           <div className="text-center py-8">
@@ -551,10 +654,18 @@ export default function CourseContentPage({ course }: { course: any }) {
                     onClick={() => handleView(content)}
                     className="p-2 text-gray-400 hover:text-blue-600"
                     title={
-                      content.content_type === "url" ? "Open Link" : "View File"
+                      content.content_type === "url"
+                        ? "Open Link"
+                        : content.file_type === "articulate_html"
+                        ? "Launch Articulate Content"
+                        : "View File"
                     }
                   >
-                    <EyeIcon className="h-4 w-4" />
+                    {content.file_type === "articulate_html" ? (
+                      <PlayIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
                   </button>
                   {content.content_type === "file" && (
                     <button

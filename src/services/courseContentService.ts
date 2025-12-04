@@ -255,3 +255,62 @@ export const getCourseContentForTrainee = async (courseId: number): Promise<{ su
     throw error;
   }
 };
+
+// Get Articulate content URL for viewing (auto-detects user context)
+export const getArticulateContent = async (id: number): Promise<{ 
+  success: boolean; 
+  index_url: string; 
+  content_id: number; 
+  title: string 
+}> => {
+  try {
+    // Try admin endpoint first, fallback to trainee if 403
+    let response;
+    try {
+      console.log('Trying admin endpoint for Articulate content:', id);
+      response = await api.get(`/api/admin/course-content/${id}/articulate`);
+      console.log('Admin endpoint success:', response.data);
+    } catch (error: any) {
+      console.log('Admin endpoint failed:', error.response?.status, error.response?.data);
+      if (error.response?.status === 403) {
+        // Fallback to trainee endpoint
+        console.log('Trying trainee endpoint for Articulate content:', id);
+        response = await api.get(`/api/trainee/course-content/${id}/articulate`);
+        console.log('Trainee endpoint success:', response.data);
+      } else {
+        throw error;
+      }
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Error getting Articulate content:', error);
+    throw error;
+  }
+};
+
+// Get Articulate content URL for trainees
+export const getArticulateContentForTrainee = async (id: number): Promise<{ 
+  success: boolean; 
+  index_url: string; 
+  content_id: number; 
+  title: string 
+}> => {
+  try {
+    const response = await api.get(`/api/trainee/course-content/${id}/articulate`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting Articulate content for trainee:', error);
+    throw error;
+  }
+};
+
+// Cleanup extracted Articulate content (admin only)
+export const cleanupArticulateContent = async (id: number): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await api.delete(`/api/admin/course-content/${id}/cleanup`);
+    return response.data;
+  } catch (error) {
+    console.error('Error cleaning up Articulate content:', error);
+    throw error;
+  }
+};
