@@ -83,19 +83,28 @@ export default function TraineeProgressTracking({
   // Load persistent session data on component mount
   useEffect(() => {
     const savedSession = localStorage.getItem("articulate_session");
-    if (savedSession && user) {
+    if (savedSession && user && progressData) {
       try {
         const sessionData = JSON.parse(savedSession);
         if (sessionData.userId === user.id && sessionData.contentId) {
+          // Always get the latest time from the database for real-time accuracy
           const existingProgress = getContentProgress(sessionData.contentId);
           const existingTimeInSeconds = existingProgress
             ? existingProgress.time_spent * 60
             : 0;
 
+          console.log(
+            "Restoring session for content:",
+            sessionData.contentId,
+            "with",
+            existingTimeInSeconds / 60,
+            "minutes"
+          );
+
           setViewingContent({
             contentId: sessionData.contentId,
-            startTime: Date.now(),
-            totalTimeSpent: existingTimeInSeconds,
+            startTime: Date.now(), // Fresh start time for new session
+            totalTimeSpent: existingTimeInSeconds, // Use latest database time
           });
         }
       } catch (error) {
@@ -218,7 +227,7 @@ export default function TraineeProgressTracking({
     };
   }, [viewingContent, articulateViewer.isOpen]);
 
-  // Auto-save progress periodically with accumulated time
+  // Auto-save progress periodically - every 1 minute
   useEffect(() => {
     if (!viewingContent || !user) return;
 
@@ -231,6 +240,8 @@ export default function TraineeProgressTracking({
 
       if (totalTimeSpent > 0) {
         try {
+          console.log("Auto-saving progress:", totalTimeSpent, "minutes");
+
           await updateModuleProgress({
             trainee_id: user.id,
             course_content_id: viewingContent.contentId,
@@ -238,26 +249,50 @@ export default function TraineeProgressTracking({
             time_spent: totalTimeSpent,
           });
 
+          // DON'T reset startTime - keep it continuous for accurate session tracking
+          // Only update totalTimeSpent to match what was saved to database
+          setViewingContent((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  totalTimeSpent: totalTimeSpent * 60, // Keep the original startTime intact
+                }
+              : null
+          );
+
           // Save session data to localStorage for persistence
           const sessionData = {
+            userId: user.id,
             contentId: viewingContent.contentId,
-            startTime: viewingContent.startTime,
-            totalTimeSpent:
-              viewingContent.totalTimeSpent + currentSessionElapsed * 60,
+            startTime: viewingContent.startTime, // Keep original start time
+            totalTimeSpent: totalTimeSpent * 60,
             lastSaved: Date.now(),
           };
           localStorage.setItem(
             `lms_session_${viewingContent.contentId}`,
             JSON.stringify(sessionData)
           );
+
+          // Refresh progress data to get updated database values
+          if (courseId && scheduleId) {
+            const updatedProgress = await getCourseProgress(
+              courseId,
+              scheduleId
+            );
+            if (updatedProgress.success) {
+              setProgressData(updatedProgress);
+            }
+          }
+
+          console.log("Progress auto-saved successfully");
         } catch (error) {
           console.error("Error auto-saving progress:", error);
         }
       }
-    }, 30000); // Save every 30 seconds
+    }, 60000); // Save every 1 minute
 
     return () => clearInterval(autoSaveInterval);
-  }, [viewingContent, user]);
+  }, [viewingContent, user, courseId, scheduleId]);
 
   const handleStartModule = async (moduleId: number) => {
     if (!user) return;
@@ -473,12 +508,28 @@ export default function TraineeProgressTracking({
 
     if (totalTimeSpent > 0) {
       try {
+        console.log(
+          "Saving current progress on close:",
+          totalTimeSpent,
+          "minutes"
+        );
+
         await updateModuleProgress({
           trainee_id: user.id,
           course_content_id: viewingContent.contentId,
           completion_percentage: 50, // In progress
           time_spent: totalTimeSpent,
         });
+
+        // Update the accumulated time but keep the session continuous
+        setViewingContent((prev) =>
+          prev
+            ? {
+                ...prev,
+                totalTimeSpent: totalTimeSpent * 60, // Update accumulated time
+              }
+            : null
+        );
       } catch (error) {
         console.error("Error saving progress:", error);
       }
@@ -490,12 +541,24 @@ export default function TraineeProgressTracking({
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
 
+    // Always show format like "1h 32m 2s" or "32m 2s" or "2s"
     if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
-        .toString()
-        .padStart(2, "0")}`;
+      if (minutes > 0 && secs > 0) {
+        return `${hours}h ${minutes}m ${secs}s`;
+      } else if (minutes > 0) {
+        return `${hours}h ${minutes}m`;
+      } else {
+        return `${hours}h`;
+      }
+    } else if (minutes > 0) {
+      if (secs > 0) {
+        return `${minutes}m ${secs}s`;
+      } else {
+        return `${minutes}m`;
+      }
+    } else {
+      return `${secs}s`;
     }
-    return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
   const closeArticulateViewer = async () => {
