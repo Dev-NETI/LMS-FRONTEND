@@ -14,8 +14,6 @@ import {
   FilmIcon,
   XMarkIcon,
   ArrowTopRightOnSquareIcon,
-  PauseIcon,
-  StopIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckSolid } from "@heroicons/react/24/solid";
 import {
@@ -77,9 +75,52 @@ export default function TraineeProgressTracking({
   const [viewingContent, setViewingContent] = useState<{
     contentId: number;
     startTime: number;
+    totalTimeSpent: number;
   } | null>(null);
   const [currentSessionTime, setCurrentSessionTime] = useState(0);
   const [timeInterval, setTimeInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Load persistent session data on component mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem("articulate_session");
+    if (savedSession && user) {
+      try {
+        const sessionData = JSON.parse(savedSession);
+        if (sessionData.userId === user.id && sessionData.contentId) {
+          const existingProgress = getContentProgress(sessionData.contentId);
+          const existingTimeInSeconds = existingProgress
+            ? existingProgress.time_spent * 60
+            : 0;
+
+          setViewingContent({
+            contentId: sessionData.contentId,
+            startTime: Date.now(),
+            totalTimeSpent: existingTimeInSeconds,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading saved session:", error);
+        localStorage.removeItem("articulate_session");
+      }
+    }
+  }, [user, progressData]);
+
+  // Save session data to localStorage whenever viewingContent changes
+  useEffect(() => {
+    if (viewingContent && user) {
+      localStorage.setItem(
+        "articulate_session",
+        JSON.stringify({
+          userId: user.id,
+          contentId: viewingContent.contentId,
+          startTime: viewingContent.startTime,
+          totalTimeSpent: viewingContent.totalTimeSpent,
+        })
+      );
+    } else {
+      localStorage.removeItem("articulate_session");
+    }
+  }, [viewingContent, user]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,14 +183,18 @@ export default function TraineeProgressTracking({
     };
   }, [articulateViewer.isOpen, selectedModule]);
 
-  // Time tracking effect
+  // Time tracking effect with localStorage persistence
   useEffect(() => {
     if (viewingContent && articulateViewer.isOpen) {
       const interval = setInterval(() => {
-        const elapsed = Math.floor(
+        const currentSessionElapsed = Math.floor(
           (Date.now() - viewingContent.startTime) / 1000
         ); // seconds
-        setCurrentSessionTime(elapsed);
+
+        // Total session time = previously accumulated time + current session
+        const totalSessionTime =
+          viewingContent.totalTimeSpent + currentSessionElapsed;
+        setCurrentSessionTime(totalSessionTime);
       }, 1000);
 
       setTimeInterval(interval);
@@ -173,22 +218,38 @@ export default function TraineeProgressTracking({
     };
   }, [viewingContent, articulateViewer.isOpen]);
 
-  // Auto-save progress periodically
+  // Auto-save progress periodically with accumulated time
   useEffect(() => {
     if (!viewingContent || !user) return;
 
     const autoSaveInterval = setInterval(async () => {
-      const timeElapsedMinutes = Math.floor(
+      const currentSessionElapsed = Math.floor(
         (Date.now() - viewingContent.startTime) / 60000
       );
-      if (timeElapsedMinutes > 0) {
+      const totalTimeSpent =
+        Math.floor(viewingContent.totalTimeSpent / 60) + currentSessionElapsed;
+
+      if (totalTimeSpent > 0) {
         try {
           await updateModuleProgress({
             trainee_id: user.id,
             course_content_id: viewingContent.contentId,
             completion_percentage: 50, // In progress
-            time_spent: timeElapsedMinutes,
+            time_spent: totalTimeSpent,
           });
+
+          // Save session data to localStorage for persistence
+          const sessionData = {
+            contentId: viewingContent.contentId,
+            startTime: viewingContent.startTime,
+            totalTimeSpent:
+              viewingContent.totalTimeSpent + currentSessionElapsed * 60,
+            lastSaved: Date.now(),
+          };
+          localStorage.setItem(
+            `lms_session_${viewingContent.contentId}`,
+            JSON.stringify(sessionData)
+          );
         } catch (error) {
           console.error("Error auto-saving progress:", error);
         }
@@ -209,10 +270,44 @@ export default function TraineeProgressTracking({
       });
 
       if (response.success) {
-        // Start time tracking
+        // Check for localStorage session recovery first
+        let existingTimeInSeconds = 0;
+        const sessionKey = `lms_session_${moduleId}`;
+        const savedSession = localStorage.getItem(sessionKey);
+
+        if (savedSession) {
+          try {
+            const sessionData = JSON.parse(savedSession);
+            // Only recover if it's from within the last hour
+            if (Date.now() - sessionData.lastSaved < 3600000) {
+              existingTimeInSeconds = sessionData.totalTimeSpent;
+              console.log(
+                "Recovered session time:",
+                existingTimeInSeconds / 60,
+                "minutes"
+              );
+            } else {
+              localStorage.removeItem(sessionKey); // Remove stale session
+            }
+          } catch (error) {
+            console.error("Error parsing saved session:", error);
+            localStorage.removeItem(sessionKey);
+          }
+        }
+
+        // Fallback to database progress if no valid session
+        if (existingTimeInSeconds === 0) {
+          const existingProgress = getContentProgress(moduleId);
+          existingTimeInSeconds = existingProgress
+            ? existingProgress.time_spent * 60
+            : 0;
+        }
+
+        // Start time tracking with accumulated time
         setViewingContent({
           contentId: moduleId,
           startTime: Date.now(),
+          totalTimeSpent: existingTimeInSeconds,
         });
 
         // Find and launch the content
@@ -295,6 +390,48 @@ export default function TraineeProgressTracking({
       try {
         const response = await getArticulateContentForTrainee(content.id);
         if (response.success) {
+          // Check for localStorage session recovery first
+          let existingTimeInSeconds = 0;
+          const sessionKey = `lms_session_${content.id}`;
+          const savedSession = localStorage.getItem(sessionKey);
+
+          if (savedSession) {
+            try {
+              const sessionData = JSON.parse(savedSession);
+              // Only recover if it's from within the last hour
+              if (Date.now() - sessionData.lastSaved < 3600000) {
+                existingTimeInSeconds = sessionData.totalTimeSpent;
+                console.log(
+                  "Recovered session time for content view:",
+                  existingTimeInSeconds / 60,
+                  "minutes"
+                );
+              } else {
+                localStorage.removeItem(sessionKey); // Remove stale session
+              }
+            } catch (error) {
+              console.error("Error parsing saved session:", error);
+              localStorage.removeItem(sessionKey);
+            }
+          }
+
+          // Fallback to database progress if no valid session
+          if (existingTimeInSeconds === 0) {
+            const existingProgress = getContentProgress(content.id);
+            existingTimeInSeconds = existingProgress
+              ? existingProgress.time_spent * 60
+              : 0;
+          }
+
+          // Set up viewing content with accumulated time if not already tracking
+          if (!viewingContent || viewingContent.contentId !== content.id) {
+            setViewingContent({
+              contentId: content.id,
+              startTime: Date.now(),
+              totalTimeSpent: existingTimeInSeconds,
+            });
+          }
+
           setArticulateViewer({
             isOpen: true,
             url: response.index_url,
@@ -328,16 +465,19 @@ export default function TraineeProgressTracking({
   const saveCurrentProgress = async () => {
     if (!viewingContent || !user) return;
 
-    const timeElapsedMinutes = Math.floor(
+    const currentSessionElapsed = Math.floor(
       (Date.now() - viewingContent.startTime) / 60000
     );
-    if (timeElapsedMinutes > 0) {
+    const totalTimeSpent =
+      Math.floor(viewingContent.totalTimeSpent / 60) + currentSessionElapsed;
+
+    if (totalTimeSpent > 0) {
       try {
         await updateModuleProgress({
           trainee_id: user.id,
           course_content_id: viewingContent.contentId,
           completion_percentage: 50, // In progress
-          time_spent: timeElapsedMinutes,
+          time_spent: totalTimeSpent,
         });
       } catch (error) {
         console.error("Error saving progress:", error);
@@ -363,7 +503,11 @@ export default function TraineeProgressTracking({
     await saveCurrentProgress();
 
     const contentId = articulateViewer.contentId;
-    const startTime = articulateViewer.startTime;
+
+    // Clean up localStorage session on close (optional)
+    if (contentId) {
+      localStorage.removeItem(`lms_session_${contentId}`);
+    }
 
     setArticulateViewer({
       isOpen: false,
@@ -376,15 +520,10 @@ export default function TraineeProgressTracking({
 
     // Clear time tracking
     setCurrentSessionTime(0);
+    setViewingContent(null);
     if (timeInterval) {
       clearInterval(timeInterval);
       setTimeInterval(null);
-    }
-  };
-
-  const openInNewWindow = () => {
-    if (articulateViewer.url) {
-      window.open(articulateViewer.url, "_blank");
     }
   };
 
@@ -899,30 +1038,6 @@ export default function TraineeProgressTracking({
             </div>
 
             <div className="flex items-center space-x-3">
-              {/* Progress Indicator */}
-              {(() => {
-                const progress = articulateViewer.contentId
-                  ? getContentProgress(articulateViewer.contentId)
-                  : null;
-                return (
-                  progress && (
-                    <div className="flex items-center space-x-2 text-sm">
-                      <div className="w-32 bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-green-400 h-2 rounded-full transition-all duration-300"
-                          style={{
-                            width: `${progress.completion_percentage}%`,
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-green-400 font-medium">
-                        {progress.completion_percentage}%
-                      </span>
-                    </div>
-                  )
-                );
-              })()}
-
               {/* Action Buttons */}
               <button
                 onClick={toggleFullscreen}
@@ -963,36 +1078,20 @@ export default function TraineeProgressTracking({
                   </svg>
                 )}
               </button>
-
-              <button
-                onClick={() => saveCurrentProgress()}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                title="Save progress"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </button>
-              
-              <button
-                onClick={openInNewWindow}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                title="Open in new window"
-              >
-                <ArrowTopRightOnSquareIcon className="w-5 h-5" />
-              </button>
             </div>
           </div>
 
           {/* Main Content Area */}
           <div
             className={`flex ${
-              articulateViewer.isFullscreen ? "h-screen pt-16" : "h-[calc(100vh-5rem)]"
+              articulateViewer.isFullscreen
+                ? "h-screen pt-16"
+                : "h-[calc(100vh-5rem)]"
             }`}
             style={{
-              height: articulateViewer.isFullscreen 
-                ? 'calc(100vh - 64px)' 
-                : 'calc(100vh - 80px)'
+              height: articulateViewer.isFullscreen
+                ? "calc(100vh - 64px)"
+                : "calc(100vh - 80px)",
             }}
           >
             {/* Content Viewer */}
@@ -1003,11 +1102,11 @@ export default function TraineeProgressTracking({
                 title={articulateViewer.title}
                 allow="fullscreen"
                 scrolling="yes"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  display: 'block'
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                  display: "block",
                 }}
               />
             </div>
@@ -1017,15 +1116,21 @@ export default function TraineeProgressTracking({
               <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
                 {/* Panel Header */}
                 <div className="p-4 border-b border-gray-200 bg-gray-50">
-                  <h3 className="font-semibold text-gray-900">Course Progress</h3>
-                  <p className="text-sm text-gray-600 mt-1">Track your learning journey</p>
+                  <h3 className="font-semibold text-gray-900">
+                    Course Progress
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Track your learning journey
+                  </p>
                 </div>
 
                 {/* Progress Stats */}
                 <div className="p-4 space-y-4">
                   <div className="bg-blue-50 rounded-lg p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-blue-900">Session Time</span>
+                      <span className="text-sm font-medium text-blue-900">
+                        Session Time
+                      </span>
                       <ClockIcon className="w-4 h-4 text-blue-600" />
                     </div>
                     <div className="text-xl font-bold text-blue-900">
@@ -1034,23 +1139,31 @@ export default function TraineeProgressTracking({
                   </div>
 
                   {(() => {
-                    const progress = articulateViewer.contentId ? getContentProgress(articulateViewer.contentId) : null;
-                    return progress && (
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-green-900">Total Time</span>
-                          <ClockIcon className="w-4 h-4 text-green-600" />
+                    const progress = articulateViewer.contentId
+                      ? getContentProgress(articulateViewer.contentId)
+                      : null;
+                    return (
+                      progress && (
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-green-900">
+                              Total Time
+                            </span>
+                            <ClockIcon className="w-4 h-4 text-green-600" />
+                          </div>
+                          <div className="text-xl font-bold text-green-900">
+                            {formatTimeSpent(progress.time_spent)}
+                          </div>
                         </div>
-                        <div className="text-xl font-bold text-green-900">
-                          {formatTimeSpent(progress.time_spent)}
-                        </div>
-                      </div>
+                      )
                     );
                   })()}
 
                   {articulateViewer.contentId && (
                     <button
-                      onClick={() => handleCompleteModule(articulateViewer.contentId!)}
+                      onClick={() =>
+                        handleCompleteModule(articulateViewer.contentId!)
+                      }
                       disabled={actionLoading === articulateViewer.contentId}
                       className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -1062,21 +1175,24 @@ export default function TraineeProgressTracking({
 
                 {/* Course Content List */}
                 <div className="flex-1 overflow-y-auto p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Course Content</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Course Content
+                  </h4>
                   <div className="space-y-2">
                     {courseContents
                       .sort((a, b) => a.order - b.order)
                       .map((content, index) => {
                         const progress = getContentProgress(content.id);
-                        const isCurrentContent = content.id === articulateViewer.contentId;
-                        
+                        const isCurrentContent =
+                          content.id === articulateViewer.contentId;
+
                         return (
                           <div
                             key={content.id}
                             className={`p-3 rounded-lg border transition-colors ${
-                              isCurrentContent 
-                                ? 'bg-blue-50 border-blue-200' 
-                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                              isCurrentContent
+                                ? "bg-blue-50 border-blue-200"
+                                : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                             }`}
                           >
                             <div className="flex items-center space-x-3">
@@ -1086,17 +1202,23 @@ export default function TraineeProgressTracking({
                                 </span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-medium truncate ${
-                                  isCurrentContent ? 'text-blue-900' : 'text-gray-900'
-                                }`}>
+                                <p
+                                  className={`text-sm font-medium truncate ${
+                                    isCurrentContent
+                                      ? "text-blue-900"
+                                      : "text-gray-900"
+                                  }`}
+                                >
                                   {content.title}
                                 </p>
                                 {progress && (
                                   <div className="flex items-center space-x-2 mt-1">
                                     <div className="w-16 bg-gray-200 rounded-full h-1">
-                                      <div 
+                                      <div
                                         className="bg-green-400 h-1 rounded-full"
-                                        style={{ width: `${progress.completion_percentage}%` }}
+                                        style={{
+                                          width: `${progress.completion_percentage}%`,
+                                        }}
                                       ></div>
                                     </div>
                                     <span className="text-xs text-gray-500">

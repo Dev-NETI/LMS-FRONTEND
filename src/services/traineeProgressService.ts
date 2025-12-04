@@ -173,8 +173,7 @@ export const updateModuleProgress = async (data: {
   notes?: string;
 }): Promise<{ success: boolean; message: string; progress: TraineeProgress }> => {
   try {
-    const endpoint = data.trainee_id ? '/api/admin/progress/update' : '/api/trainee/progress/update';
-    const response = await api.post(endpoint, data);
+    const response = await api.post('/api/trainee/progress/update', data);
     return response.data;
   } catch (error) {
     console.error('Error updating module progress:', error);
