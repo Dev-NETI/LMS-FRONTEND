@@ -24,6 +24,7 @@ import {
   getCourseProgress,
   markModuleAsStarted,
   markModuleAsCompleted,
+  updateModuleProgress,
   formatTimeSpent,
   getStatusColor,
   getStatusText,
@@ -64,17 +65,21 @@ export default function TraineeProgressTracking({
     title: string;
     contentId?: number;
     startTime?: number;
+    isFullscreen?: boolean;
   }>({
     isOpen: false,
     url: "",
     title: "",
     contentId: undefined,
     startTime: undefined,
+    isFullscreen: false,
   });
   const [viewingContent, setViewingContent] = useState<{
     contentId: number;
     startTime: number;
   } | null>(null);
+  const [currentSessionTime, setCurrentSessionTime] = useState(0);
+  const [timeInterval, setTimeInterval] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,6 +141,62 @@ export default function TraineeProgressTracking({
       document.body.style.overflow = "auto";
     };
   }, [articulateViewer.isOpen, selectedModule]);
+
+  // Time tracking effect
+  useEffect(() => {
+    if (viewingContent && articulateViewer.isOpen) {
+      const interval = setInterval(() => {
+        const elapsed = Math.floor(
+          (Date.now() - viewingContent.startTime) / 1000
+        ); // seconds
+        setCurrentSessionTime(elapsed);
+      }, 1000);
+
+      setTimeInterval(interval);
+
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    } else {
+      if (timeInterval) {
+        clearInterval(timeInterval);
+        setTimeInterval(null);
+      }
+    }
+
+    return () => {
+      if (timeInterval) {
+        clearInterval(timeInterval);
+      }
+    };
+  }, [viewingContent, articulateViewer.isOpen]);
+
+  // Auto-save progress periodically
+  useEffect(() => {
+    if (!viewingContent || !user) return;
+
+    const autoSaveInterval = setInterval(async () => {
+      const timeElapsedMinutes = Math.floor(
+        (Date.now() - viewingContent.startTime) / 60000
+      );
+      if (timeElapsedMinutes > 0) {
+        try {
+          await updateModuleProgress({
+            trainee_id: user.id,
+            course_content_id: viewingContent.contentId,
+            completion_percentage: 50, // In progress
+            time_spent: timeElapsedMinutes,
+          });
+        } catch (error) {
+          console.error("Error auto-saving progress:", error);
+        }
+      }
+    }, 30000); // Save every 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [viewingContent, user]);
 
   const handleStartModule = async (moduleId: number) => {
     if (!user) return;
@@ -257,7 +318,50 @@ export default function TraineeProgressTracking({
     }
   };
 
-  const closeArticulateViewer = () => {
+  const toggleFullscreen = () => {
+    setArticulateViewer((prev) => ({
+      ...prev,
+      isFullscreen: !prev.isFullscreen,
+    }));
+  };
+
+  const saveCurrentProgress = async () => {
+    if (!viewingContent || !user) return;
+
+    const timeElapsedMinutes = Math.floor(
+      (Date.now() - viewingContent.startTime) / 60000
+    );
+    if (timeElapsedMinutes > 0) {
+      try {
+        await updateModuleProgress({
+          trainee_id: user.id,
+          course_content_id: viewingContent.contentId,
+          completion_percentage: 50, // In progress
+          time_spent: timeElapsedMinutes,
+        });
+      } catch (error) {
+        console.error("Error saving progress:", error);
+      }
+    }
+  };
+
+  const formatSessionTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const closeArticulateViewer = async () => {
+    // Save progress before closing
+    await saveCurrentProgress();
+
     const contentId = articulateViewer.contentId;
     const startTime = articulateViewer.startTime;
 
@@ -267,14 +371,14 @@ export default function TraineeProgressTracking({
       title: "",
       contentId: undefined,
       startTime: undefined,
+      isFullscreen: false,
     });
 
-    // Update time spent if this was being tracked
-    if (contentId && startTime && viewingContent?.contentId === contentId) {
-      const timeElapsed = Math.floor((Date.now() - startTime) / 60000); // Convert to minutes
-      setViewingContent((prev) =>
-        prev ? { ...prev, startTime: Date.now() - timeElapsed * 60000 } : null
-      );
+    // Clear time tracking
+    setCurrentSessionTime(0);
+    if (timeInterval) {
+      clearInterval(timeInterval);
+      setTimeInterval(null);
     }
   };
 
@@ -747,63 +851,274 @@ export default function TraineeProgressTracking({
         </div>
       )}
 
-      {/* Articulate Content Viewer Modal */}
+      {/* Udemy-style Articulate Viewer */}
       {articulateViewer.isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
-          <div className="relative min-h-full flex items-center justify-center p-4">
-            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
-              {/* Modal Header */}
-              <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                <div className="flex items-center space-x-3">
-                  <h4 className="text-lg font-medium text-gray-900">
+        <div
+          className={`fixed inset-0 bg-black z-50 ${
+            articulateViewer.isFullscreen ? "" : ""
+          } overflow-hidden`}
+        >
+          {/* Top Navigation Bar */}
+          <div
+            className={`bg-black/90 text-white flex items-center justify-between px-6 py-3 ${
+              articulateViewer.isFullscreen
+                ? "absolute top-0 left-0 right-0 z-10"
+                : ""
+            }`}
+          >
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={closeArticulateViewer}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                title="Exit course"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+              <div className="flex items-center space-x-3">
+                <FilmIcon className="w-6 h-6 text-purple-400" />
+                <div>
+                  <h1 className="font-semibold text-lg">
                     {articulateViewer.title}
-                  </h4>
-                  {viewingContent?.contentId === articulateViewer.contentId && (
-                    <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                      Time tracking active
+                  </h1>
+                  <div className="flex items-center space-x-4 text-sm text-gray-300">
+                    <span>
+                      Session Time: {formatSessionTime(currentSessionTime)}
                     </span>
-                  )}
+                    {viewingContent && <span>•</span>}
+                    {viewingContent && (
+                      <span>
+                        Started:{" "}
+                        {new Date(
+                          viewingContent.startTime
+                        ).toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={openInNewWindow}
-                    className="p-2 text-gray-400 hover:text-blue-600"
-                    title="Open in new window"
-                  >
-                    <ArrowTopRightOnSquareIcon className="h-5 w-5" />
-                  </button>
-                  {articulateViewer.contentId && (
-                    <button
-                      onClick={() =>
-                        handleCompleteModule(articulateViewer.contentId!)
-                      }
-                      disabled={actionLoading === articulateViewer.contentId}
-                      className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-                    >
-                      <CheckCircleIcon className="w-4 h-4" />
-                      <span>Mark Complete</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={closeArticulateViewer}
-                    className="p-2 text-gray-400 hover:text-gray-600"
-                    title="Close"
-                  >
-                    <XMarkIcon className="h-6 w-6" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Content */}
-              <div className="relative" style={{ height: "calc(90vh - 80px)" }}>
-                <iframe
-                  src={articulateViewer.url}
-                  className="w-full h-full border-none"
-                  title={articulateViewer.title}
-                  allow="fullscreen"
-                />
               </div>
             </div>
+
+            <div className="flex items-center space-x-3">
+              {/* Progress Indicator */}
+              {(() => {
+                const progress = articulateViewer.contentId
+                  ? getContentProgress(articulateViewer.contentId)
+                  : null;
+                return (
+                  progress && (
+                    <div className="flex items-center space-x-2 text-sm">
+                      <div className="w-32 bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-green-400 h-2 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${progress.completion_percentage}%`,
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-green-400 font-medium">
+                        {progress.completion_percentage}%
+                      </span>
+                    </div>
+                  )
+                );
+              })()}
+
+              {/* Action Buttons */}
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                title={
+                  articulateViewer.isFullscreen
+                    ? "Exit fullscreen"
+                    : "Enter fullscreen"
+                }
+              >
+                {articulateViewer.isFullscreen ? (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                    />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={() => saveCurrentProgress()}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                title="Save progress"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </button>
+              
+              <button
+                onClick={openInNewWindow}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                title="Open in new window"
+              >
+                <ArrowTopRightOnSquareIcon className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div
+            className={`flex ${
+              articulateViewer.isFullscreen ? "h-screen pt-16" : "h-[calc(100vh-5rem)]"
+            }`}
+            style={{
+              height: articulateViewer.isFullscreen 
+                ? 'calc(100vh - 64px)' 
+                : 'calc(100vh - 80px)'
+            }}
+          >
+            {/* Content Viewer */}
+            <div className="flex-1 bg-gray-900">
+              <iframe
+                src={articulateViewer.url}
+                className="w-full h-full border-none"
+                title={articulateViewer.title}
+                allow="fullscreen"
+                scrolling="yes"
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  display: 'block'
+                }}
+              />
+            </div>
+
+            {/* Side Panel */}
+            {!articulateViewer.isFullscreen && (
+              <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+                {/* Panel Header */}
+                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                  <h3 className="font-semibold text-gray-900">Course Progress</h3>
+                  <p className="text-sm text-gray-600 mt-1">Track your learning journey</p>
+                </div>
+
+                {/* Progress Stats */}
+                <div className="p-4 space-y-4">
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-blue-900">Session Time</span>
+                      <ClockIcon className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="text-xl font-bold text-blue-900">
+                      {formatSessionTime(currentSessionTime)}
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const progress = articulateViewer.contentId ? getContentProgress(articulateViewer.contentId) : null;
+                    return progress && (
+                      <div className="bg-green-50 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-green-900">Total Time</span>
+                          <ClockIcon className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="text-xl font-bold text-green-900">
+                          {formatTimeSpent(progress.time_spent)}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {articulateViewer.contentId && (
+                    <button
+                      onClick={() => handleCompleteModule(articulateViewer.contentId!)}
+                      disabled={actionLoading === articulateViewer.contentId}
+                      className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <CheckCircleIcon className="w-5 h-5" />
+                      <span>Mark as Complete</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Course Content List */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  <h4 className="font-medium text-gray-900 mb-3">Course Content</h4>
+                  <div className="space-y-2">
+                    {courseContents
+                      .sort((a, b) => a.order - b.order)
+                      .map((content, index) => {
+                        const progress = getContentProgress(content.id);
+                        const isCurrentContent = content.id === articulateViewer.contentId;
+                        
+                        return (
+                          <div
+                            key={content.id}
+                            className={`p-3 rounded-lg border transition-colors ${
+                              isCurrentContent 
+                                ? 'bg-blue-50 border-blue-200' 
+                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-medium text-blue-600">
+                                  {index + 1}
+                                </span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium truncate ${
+                                  isCurrentContent ? 'text-blue-900' : 'text-gray-900'
+                                }`}>
+                                  {content.title}
+                                </p>
+                                {progress && (
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <div className="w-16 bg-gray-200 rounded-full h-1">
+                                      <div 
+                                        className="bg-green-400 h-1 rounded-full"
+                                        style={{ width: `${progress.completion_percentage}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {progress.completion_percentage}%
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              {progress?.status === "completed" && (
+                                <CheckSolid className="w-4 h-4 text-green-500" />
+                              )}
+                              {isCurrentContent && (
+                                <PlayIcon className="w-4 h-4 text-blue-500" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
