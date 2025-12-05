@@ -1000,6 +1000,20 @@ export default function TraineeProgressTracking({
                                 <span>
                                   {formatTimeSpent(progress.time_spent)} spent
                                 </span>
+                                {progress.started_at && (
+                                  <div className="flex items-center space-x-1">
+                                    <CalendarIcon className="w-3 h-3" />
+                                    <span>
+                                      Started:{" "}
+                                      {new Date(
+                                        progress.started_at
+                                      ).toLocaleDateString()}{" "}
+                                      {new Date(
+                                        progress.started_at
+                                      ).toLocaleTimeString()}
+                                    </span>
+                                  </div>
+                                )}
                                 {progress.last_activity && (
                                   <div className="flex items-center space-x-1">
                                     <CalendarIcon className="w-3 h-3" />
