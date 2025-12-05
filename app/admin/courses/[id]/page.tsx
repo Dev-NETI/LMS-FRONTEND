@@ -18,6 +18,7 @@ import {
   getCourseSchedule,
 } from "@/src/services/scheduleService";
 import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable";
+import QuestionBank from "@/src/components/admin/course/QuestionBank";
 
 // Transform backend course data to frontend format
 const transformCourseData = (backendCourse: AdminCourse): Course => {
@@ -34,11 +35,6 @@ const transformCourseData = (backendCourse: AdminCourse): Course => {
     createdAt: backendCourse.coursecreationdate,
     updatedAt: backendCourse.courseupdateddate,
     status: "Published",
-    price: 0,
-    tags: [],
-    syllabus: [],
-    requirements: [],
-    objectives: [],
   };
 };
 
@@ -48,7 +44,7 @@ export default function CourseDetailsPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [schedule, setSchedule] = useState<CourseSchedule[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "content" | "schedule" | "materials"
+    "overview" | "content" | "schedule" | "materials" | "assessment"
   >("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [isScheduleLoading, setIsScheduleLoading] = useState(false);
@@ -309,6 +305,17 @@ export default function CourseDetailsPage() {
               </button>
 
               <button
+                onClick={() => setActiveTab("assessment")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "assessment"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Question Bank
+              </button>
+
+              <button
                 onClick={() => setActiveTab("schedule")}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "schedule"
@@ -428,6 +435,8 @@ export default function CourseDetailsPage() {
             ) : (
               <CourseSchedulePage schedule={schedule} />
             ))}
+
+          {activeTab === "assessment" && <QuestionBank courseId={course.id} />}
         </div>
       </AdminLayout>
     </AuthGuard>
