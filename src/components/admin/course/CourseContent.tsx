@@ -15,17 +15,11 @@ import {
 } from "@/src/services/courseContentService";
 import {
   PlusIcon,
-  TrashIcon,
-  PencilIcon,
-  EyeIcon,
-  ArrowDownTrayIcon,
-  DocumentIcon,
-  LinkIcon,
-  FilmIcon,
   XMarkIcon,
   PlayIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
+import SortableCourseContent from "./SortableCourseContent";
 
 type ContentFormData = {
   title: string;
@@ -280,16 +274,6 @@ export default function CourseContentPage({ course }: { course: any }) {
     if (articulateViewer.url) {
       window.open(articulateViewer.url, "_blank");
     }
-  };
-
-  const getContentIcon = (content: CourseContent) => {
-    if (content.content_type === "url") {
-      return <LinkIcon className="h-6 w-6 text-blue-600" />;
-    }
-    if (content.file_type === "articulate_html") {
-      return <FilmIcon className="h-6 w-6 text-green-600" />;
-    }
-    return <DocumentIcon className="h-6 w-6 text-red-600" />;
   };
 
   if (loading) {
@@ -594,107 +578,16 @@ export default function CourseContentPage({ course }: { course: any }) {
         </div>
       )}
 
-      <div className="space-y-4">
-        {contents.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No course content added yet.</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Add Articulate HTML, PDFs, or external links for self-paced
-              learning.
-            </p>
-          </div>
-        ) : (
-          contents
-            .sort((a, b) => a.order - b.order)
-            .map((content, index) => (
-              <div
-                key={content.id}
-                className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300"
-              >
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-medium text-sm">
-                    {index + 1}
-                  </span>
-                </div>
-                <div className="ml-4 flex-shrink-0">
-                  {getContentIcon(content)}
-                </div>
-                <div className="ml-4 flex-1">
-                  <h4 className="text-sm font-medium text-gray-900">
-                    {content.title}
-                  </h4>
-                  {content.description && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {content.description}
-                    </p>
-                  )}
-                  <div className="flex items-center space-x-2 mt-2">
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                      {content.content_type === "url"
-                        ? "External Link"
-                        : content.file_type === "articulate_html"
-                        ? "Articulate HTML"
-                        : "PDF Document"}
-                    </span>
-                    {content.file_size_human && (
-                      <span className="text-xs text-gray-500">
-                        {content.file_size_human}
-                      </span>
-                    )}
-                    {content.uploaded_by && (
-                      <span className="text-xs text-gray-500">
-                        by {content.uploaded_by?.f_name}{" "}
-                        {content.uploaded_by?.l_name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleView(content)}
-                    className="p-2 text-gray-400 hover:text-blue-600"
-                    title={
-                      content.content_type === "url"
-                        ? "Open Link"
-                        : content.file_type === "articulate_html"
-                        ? "Launch Articulate Content"
-                        : "View File"
-                    }
-                  >
-                    {content.file_type === "articulate_html" ? (
-                      <PlayIcon className="h-4 w-4" />
-                    ) : (
-                      <EyeIcon className="h-4 w-4" />
-                    )}
-                  </button>
-                  {content.content_type === "file" && (
-                    <button
-                      onClick={() => handleDownload(content)}
-                      className="p-2 text-gray-400 hover:text-green-600"
-                      title="Download File"
-                    >
-                      <ArrowDownTrayIcon className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleEdit(content)}
-                    className="p-2 text-gray-400 hover:text-yellow-600"
-                    title="Edit Content"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(content)}
-                    className="p-2 text-gray-400 hover:text-red-600"
-                    title="Delete Content"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            ))
-        )}
-      </div>
+      {/* Sortable Course Content */}
+      <SortableCourseContent
+        contents={contents}
+        onContentsChange={setContents}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onView={handleView}
+        onDownload={handleDownload}
+        isUpdating={submitLoading}
+      />
     </div>
   );
 }

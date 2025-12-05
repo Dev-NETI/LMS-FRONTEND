@@ -314,3 +314,25 @@ export const cleanupArticulateContent = async (id: number): Promise<{ success: b
     throw error;
   }
 };
+
+// Update multiple course content order
+export const updateCourseContentOrder = async (updates: { id: number; order: number }[]): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await api.put('/api/admin/course-content/update-order', { updates });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating content order:', error);
+    throw error;
+  }
+};
+
+// Get the next order number for a course
+export const getNextOrderForCourse = async (courseId: number): Promise<{ nextOrder: number }> => {
+  try {
+    const response = await api.get(`/api/admin/courses/${courseId}/content/next-order`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting next order:', error);
+    throw error;
+  }
+};
