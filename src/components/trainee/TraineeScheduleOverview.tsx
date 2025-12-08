@@ -9,6 +9,7 @@ import {
   BookOpenIcon,
   MegaphoneIcon,
   DocumentTextIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import {
   CourseSchedule,
@@ -299,6 +300,18 @@ export default function TraineeScheduleOverview({
           >
             <DocumentTextIcon className="w-5 h-5 mr-2" />
             Training Materials
+          </button>
+
+          <button
+            onClick={() => onTabChange("assessments")}
+            className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center justify-center transition-colors ${
+              activeTab === "assessments"
+                ? "border-blue-500 text-blue-600 bg-blue-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <PencilSquareIcon className="w-5 h-5 mr-2" />
+            My Assessment
           </button>
         </nav>
       </div>

@@ -11,6 +11,7 @@ import TraineeAnnouncementFeed from "@/src/components/trainee/TraineeAnnouncemen
 import TraineeProgressTracking from "@/src/components/trainee/TraineeProgressTracking";
 import TraineeTrainingMaterials from "@/src/components/trainee/TraineeTrainingMaterials";
 import TraineeCourseDetails from "@/src/components/trainee/TraineeCourseDetails";
+import AssessmentList from "@/src/components/trainee/AssessmentList";
 import {
   CourseSchedule,
   getScheduleForTrainee,
@@ -139,6 +140,10 @@ export default function CourseOverviewPage() {
 
           {activeTab === "materials" && schedule && (
             <TraineeTrainingMaterials courseId={schedule.courseid} />
+          )}
+
+          {activeTab === "assessments" && (
+            <AssessmentList scheduleId={Number(params.scheduleId)} />
           )}
         </div>
       </Layout>

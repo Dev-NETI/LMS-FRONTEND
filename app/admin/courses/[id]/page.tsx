@@ -19,6 +19,7 @@ import {
 } from "@/src/services/scheduleService";
 import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable";
 import QuestionBank from "@/src/components/admin/course/QuestionBank";
+import AssessmentManagement from "@/src/components/admin/course/AssessmentManagement";
 
 // Transform backend course data to frontend format
 const transformCourseData = (backendCourse: AdminCourse): Course => {
@@ -44,7 +45,7 @@ export default function CourseDetailsPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [schedule, setSchedule] = useState<CourseSchedule[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "content" | "schedule" | "materials" | "assessment"
+    "overview" | "content" | "schedule" | "materials" | "questions" | "assessments"
   >("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [isScheduleLoading, setIsScheduleLoading] = useState(false);
@@ -305,14 +306,25 @@ export default function CourseDetailsPage() {
               </button>
 
               <button
-                onClick={() => setActiveTab("assessment")}
+                onClick={() => setActiveTab("questions")}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "assessment"
+                  activeTab === "questions"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 Question Bank
+              </button>
+
+              <button
+                onClick={() => setActiveTab("assessments")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "assessments"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Assessments
               </button>
 
               <button
@@ -436,7 +448,9 @@ export default function CourseDetailsPage() {
               <CourseSchedulePage schedule={schedule} />
             ))}
 
-          {activeTab === "assessment" && <QuestionBank courseId={course.id} />}
+          {activeTab === "questions" && <QuestionBank courseId={course.id} />}
+
+          {activeTab === "assessments" && <AssessmentManagement courseId={course.id} />}
         </div>
       </AdminLayout>
     </AuthGuard>
