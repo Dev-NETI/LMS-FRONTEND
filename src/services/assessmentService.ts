@@ -1,6 +1,11 @@
 import api from '@/lib/api';
 import { Question, QuestionOption } from './questionBankService';
 
+// Interface for the flattened question structure returned by the API
+export interface FlattenedQuestion extends Question {
+  saved_answer?: any;
+}
+
 export interface Assessment {
   id: number;
   course_id: number;
@@ -21,6 +26,19 @@ export interface Assessment {
   };
   questions_count?: number;
   total_points?: number;
+  // Assessment attempt related fields
+  attempts_count?: number;
+  can_attempt?: boolean;
+  has_active_attempt?: boolean;
+  active_attempt_id?: number;
+  best_score?: number;
+  last_attempt?: {
+    id: number;
+    percentage: number;
+    is_passed: boolean;
+    submitted_at: string;
+  };
+  attempts?: AssessmentAttempt[];
 }
 
 export interface AssessmentQuestion {
@@ -67,7 +85,7 @@ export interface AssessmentStats {
 export interface StartAssessmentResponse {
   success: boolean;
   attempt: AssessmentAttempt;
-  questions: AssessmentQuestion[];
+  questions: FlattenedQuestion[];
   time_limit: number;
   instructions?: string;
 }
@@ -87,6 +105,7 @@ export interface AssessmentResult {
   correct_answers: { [questionId: number]: any };
   explanations: { [questionId: number]: string };
 }
+
 
 // Get assessments for trainee's enrolled courses
 export const getTraineeAssessments = async (): Promise<{
@@ -136,8 +155,25 @@ export const getAssessment = async (id: number): Promise<{
 // Start a new assessment attempt
 export const startAssessment = async (assessmentId: number): Promise<StartAssessmentResponse> => {
   try {
-    const response = await api.post(`/api/trainee/assessments/${assessmentId}/start`);
-    return response.data;
+    // Start the assessment attempt
+    const startResponse = await api.post(`/api/trainee/assessments/${assessmentId}/start`);
+    
+    if (startResponse.data.success) {
+      // Get the assessment questions
+      const questionsResponse = await api.get(`/api/trainee/assessments/${assessmentId}/questions`);
+      
+      if (questionsResponse.data.success) {
+        return {
+          success: true,
+          attempt: questionsResponse.data.data.attempt,
+          assessment: questionsResponse.data.data.assessment,
+          questions: questionsResponse.data.data.questions,
+          time_limit: questionsResponse.data.data.assessment.time_limit
+        };
+      }
+    }
+    
+    return startResponse.data;
   } catch (error) {
     console.error('Error starting assessment:', error);
     throw error;
@@ -222,10 +258,22 @@ export const getAssessmentStats = async (): Promise<{
 };
 
 // Resume an in-progress assessment
-export const resumeAssessment = async (attemptId: number): Promise<StartAssessmentResponse> => {
+export const resumeAssessment = async (attemptId: number, assessmentId: number): Promise<StartAssessmentResponse> => {
   try {
-    const response = await api.post(`/api/trainee/assessment-attempts/${attemptId}/resume`);
-    return response.data;
+    // For resuming, we just need to get the assessment questions with the existing attempt
+    const questionsResponse = await api.get(`/api/trainee/assessments/${assessmentId}/questions`);
+    
+    if (questionsResponse.data.success) {
+      return {
+        success: true,
+        attempt: questionsResponse.data.data.attempt,
+        assessment: questionsResponse.data.data.assessment,
+        questions: questionsResponse.data.data.questions,
+        time_limit: questionsResponse.data.data.assessment.time_limit
+      };
+    }
+    
+    throw new Error('Failed to resume assessment');
   } catch (error) {
     console.error('Error resuming assessment:', error);
     throw error;

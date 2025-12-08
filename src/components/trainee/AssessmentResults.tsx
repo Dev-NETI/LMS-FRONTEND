@@ -412,7 +412,7 @@ export default function AssessmentResults({
         {/* Action Buttons */}
         <div className="text-center mt-8 space-x-4">
           <button
-            onClick={() => router.push('/trainee/assessments')}
+            onClick={() => router.push('/assessments')}
             className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
           >
             Back to Assessments
@@ -420,7 +420,7 @@ export default function AssessmentResults({
           
           {!isPassed && attempt.attempt_number < assessment.max_attempts && (
             <button
-              onClick={() => router.push(`/trainee/assessments/${assessment.id}`)}
+              onClick={() => router.push(`/assessments/${assessment.id}`)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Try Again

@@ -5,6 +5,7 @@ import {
   Assessment,
   AssessmentAttempt,
   AssessmentQuestion,
+  FlattenedQuestion,
   startAssessment,
   resumeAssessment,
   saveAnswer,
@@ -33,7 +34,7 @@ export default function AssessmentTaking({
   const router = useRouter();
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [attempt, setAttempt] = useState<AssessmentAttempt | null>(null);
-  const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
+  const [questions, setQuestions] = useState<FlattenedQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [questionId: number]: any }>({});
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
@@ -42,7 +43,9 @@ export default function AssessmentTaking({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
-  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(
+    new Set()
+  );
   const [showInstructions, setShowInstructions] = useState(true);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,7 +68,7 @@ export default function AssessmentTaking({
   useEffect(() => {
     if (timeRemaining > 0 && !showInstructions) {
       timerRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
+        setTimeRemaining((prev) => {
           if (prev <= 1) {
             handleTimeUp();
             return 0;
@@ -97,15 +100,15 @@ export default function AssessmentTaking({
     try {
       setLoading(true);
       const response = await startAssessment(assessmentId);
-      
+
       if (response.success) {
         setAttempt(response.attempt);
         setQuestions(response.questions);
         setTimeRemaining(response.time_limit * 60); // Convert minutes to seconds
-        
+
         // Initialize answers from existing saved answers
         const initialAnswers: { [questionId: number]: any } = {};
-        response.attempt.answers?.forEach(answer => {
+        response.attempt.answers?.forEach((answer) => {
           initialAnswers[answer.question_id] = answer.answer_data;
         });
         setAnswers(initialAnswers);
@@ -120,17 +123,17 @@ export default function AssessmentTaking({
   const resumeExistingAssessment = async () => {
     try {
       setLoading(true);
-      const response = await resumeAssessment(attemptId!);
-      
+      const response = await resumeAssessment(attemptId!, assessmentId);
+
       if (response.success) {
         setAttempt(response.attempt);
         setQuestions(response.questions);
         setTimeRemaining(response.attempt.time_remaining || 0);
         setShowInstructions(false);
-        
+
         // Load existing answers
         const savedAnswers: { [questionId: number]: any } = {};
-        response.attempt.answers?.forEach(answer => {
+        response.attempt.answers?.forEach((answer) => {
           savedAnswers[answer.question_id] = answer.answer_data;
         });
         setAnswers(savedAnswers);
@@ -144,14 +147,14 @@ export default function AssessmentTaking({
 
   const autoSaveCurrentAnswer = async () => {
     if (!attempt || questions.length === 0 || saving) return;
-    
+
     const currentQuestion = questions[currentQuestionIndex];
-    const answer = answers[currentQuestion.question.id];
-    
+    const answer = answers[currentQuestion.id];
+
     if (answer !== undefined) {
       try {
         setSaving(true);
-        await saveAnswer(attempt.id, currentQuestion.question.id, answer);
+        await saveAnswer(attempt.id, currentQuestion.id, answer);
       } catch (err) {
         console.error("Auto-save failed:", err);
       } finally {
@@ -161,21 +164,21 @@ export default function AssessmentTaking({
   };
 
   const handleAnswerChange = (questionId: number, answerData: any) => {
-    setAnswers(prev => ({
+    setAnswers((prev) => ({
       ...prev,
-      [questionId]: answerData
+      [questionId]: answerData,
     }));
   };
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
@@ -184,7 +187,7 @@ export default function AssessmentTaking({
   };
 
   const toggleFlag = (questionId: number) => {
-    setFlaggedQuestions(prev => {
+    setFlaggedQuestions((prev) => {
       const updated = new Set(prev);
       if (updated.has(questionId)) {
         updated.delete(questionId);
@@ -205,20 +208,22 @@ export default function AssessmentTaking({
 
     try {
       setSubmitting(true);
-      
+
       // Prepare answers for submission
-      const answersData = Object.entries(answers).map(([questionId, answerData]) => ({
-        question_id: parseInt(questionId),
-        answer_data: answerData
-      }));
+      const answersData = Object.entries(answers).map(
+        ([questionId, answerData]) => ({
+          question_id: parseInt(questionId),
+          answer_data: answerData,
+        })
+      );
 
       const response = await submitAssessment({
         attempt_id: attempt.id,
-        answers: answersData
+        answers: answersData,
       });
 
       if (response.success) {
-        router.push(`/trainee/assessments/${assessmentId}/results/${attempt.id}`);
+        router.push(`/assessments/${assessmentId}/results/${attempt.id}`);
       }
     } catch (err: any) {
       setError(err.message || "Failed to submit assessment");
@@ -226,9 +231,11 @@ export default function AssessmentTaking({
     }
   };
 
-  const renderQuestionContent = (question: AssessmentQuestion) => {
-    const q = question.question;
-    const currentAnswer = answers[q.id];
+  const renderQuestionContent = (question: FlattenedQuestion) => {
+    console.log('Question data:', question);
+    console.log('Question ID:', question.id);
+    console.log('Question type:', question.question_type);
+    const currentAnswer = answers[question.id];
 
     return (
       <div className="space-y-6">
@@ -239,17 +246,17 @@ export default function AssessmentTaking({
             </h2>
             <div className="prose max-w-none">
               <p className="text-lg text-gray-800 leading-relaxed">
-                {q.question_text}
+                {question.question_text}
               </p>
             </div>
           </div>
-          
+
           <button
-            onClick={() => toggleFlag(q.id)}
+            onClick={() => toggleFlag(question.id)}
             className={`p-2 rounded-lg transition-colors ${
-              flaggedQuestions.has(q.id)
-                ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+              flaggedQuestions.has(question.id)
+                ? "bg-yellow-100 text-yellow-600 hover:bg-yellow-200"
+                : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
             }`}
             title="Flag for review"
           >
@@ -258,19 +265,21 @@ export default function AssessmentTaking({
         </div>
 
         <div className="mt-8">
-          {q.question_type === 'multiple_choice' && (
+          {question.question_type === "multiple_choice" && (
             <div className="space-y-3">
-              {q.options?.map((option, index) => (
+              {question.options?.map((option, index) => (
                 <label
                   key={option.id}
                   className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <input
                     type="radio"
-                    name={`question_${q.id}`}
+                    name={`question_${question.id}`}
                     value={option.id}
                     checked={currentAnswer === option.id}
-                    onChange={(e) => handleAnswerChange(q.id, parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleAnswerChange(question.id, parseInt(e.target.value))
+                    }
                     className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <span className="ml-3 text-gray-900">{option.text}</span>
@@ -279,25 +288,30 @@ export default function AssessmentTaking({
             </div>
           )}
 
-          {q.question_type === 'checkbox' && (
+          {question.question_type === "checkbox" && (
             <div className="space-y-3">
-              {q.options?.map((option, index) => (
+              {question.options?.map((option, index) => (
                 <label
                   key={option.id}
                   className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <input
                     type="checkbox"
-                    checked={Array.isArray(currentAnswer) && currentAnswer.includes(option.id)}
+                    checked={
+                      Array.isArray(currentAnswer) &&
+                      currentAnswer.includes(option.id)
+                    }
                     onChange={(e) => {
-                      const newAnswer = Array.isArray(currentAnswer) ? [...currentAnswer] : [];
+                      const newAnswer = Array.isArray(currentAnswer)
+                        ? [...currentAnswer]
+                        : [];
                       if (e.target.checked) {
                         newAnswer.push(option.id);
                       } else {
                         const index = newAnswer.indexOf(option.id);
                         if (index > -1) newAnswer.splice(index, 1);
                       }
-                      handleAnswerChange(q.id, newAnswer);
+                      handleAnswerChange(question.id, newAnswer);
                     }}
                     className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -307,11 +321,11 @@ export default function AssessmentTaking({
             </div>
           )}
 
-          {q.question_type === 'identification' && (
+          {question.question_type === "identification" && (
             <div>
               <textarea
-                value={currentAnswer || ''}
-                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                value={currentAnswer || ""}
+                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                 placeholder="Type your answer here..."
                 className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={4}
@@ -359,10 +373,12 @@ export default function AssessmentTaking({
           <h1 className="text-3xl font-bold text-gray-900 mb-6">
             {assessment?.title || "Assessment"}
           </h1>
-          
+
           {assessment?.instructions && (
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Instructions</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Instructions
+              </h2>
               <div className="prose max-w-none text-gray-700">
                 {assessment.instructions}
               </div>
@@ -372,19 +388,23 @@ export default function AssessmentTaking({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-semibold text-blue-900 mb-2">Time Limit</h3>
-              <p className="text-blue-800">{formatTimeRemaining(timeRemaining)}</p>
+              <p className="text-blue-800">
+                {formatTimeRemaining(timeRemaining)}
+              </p>
             </div>
-            
+
             <div className="bg-green-50 p-4 rounded-lg">
               <h3 className="font-semibold text-green-900 mb-2">Questions</h3>
               <p className="text-green-800">{questions.length} questions</p>
             </div>
-            
+
             <div className="bg-yellow-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-yellow-900 mb-2">Passing Score</h3>
+              <h3 className="font-semibold text-yellow-900 mb-2">
+                Passing Score
+              </h3>
               <p className="text-yellow-800">{assessment?.passing_score}%</p>
             </div>
-            
+
             <div className="bg-purple-50 p-4 rounded-lg">
               <h3 className="font-semibold text-purple-900 mb-2">Attempts</h3>
               <p className="text-purple-800">
@@ -400,7 +420,7 @@ export default function AssessmentTaking({
             >
               Cancel
             </button>
-            
+
             <button
               onClick={() => setShowInstructions(false)}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -435,25 +455,29 @@ export default function AssessmentTaking({
                 Question {currentQuestionIndex + 1} of {questions.length}
               </span>
             </div>
-            
+
             <div className="flex items-center space-x-6">
               <div className="flex items-center text-sm text-gray-600">
-                <span>Answered: {answeredCount}/{questions.length}</span>
+                <span>
+                  Answered: {answeredCount}/{questions.length}
+                </span>
               </div>
-              
-              <div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                timeRemaining < 300 
-                  ? 'bg-red-100 text-red-800' 
-                  : timeRemaining < 900 
-                    ? 'bg-yellow-100 text-yellow-800' 
-                    : 'bg-green-100 text-green-800'
-              }`}>
+
+              <div
+                className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  timeRemaining < 300
+                    ? "bg-red-100 text-red-800"
+                    : timeRemaining < 900
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-green-100 text-green-800"
+                }`}
+              >
                 <ClockIcon className="w-4 h-4 mr-1" />
                 {formatTimeRemaining(timeRemaining)}
               </div>
             </div>
           </div>
-          
+
           <div className="mt-2">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
@@ -470,7 +494,7 @@ export default function AssessmentTaking({
         <div className="flex-1">
           <div className="bg-white rounded-xl shadow-sm p-8">
             {renderQuestionContent(currentQuestion)}
-            
+
             {/* Navigation */}
             <div className="flex items-center justify-between mt-8 pt-6 border-t">
               <button
@@ -481,13 +505,13 @@ export default function AssessmentTaking({
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
                 Previous
               </button>
-              
+
               <div className="flex items-center space-x-2">
                 {saving && (
                   <span className="text-sm text-gray-500">Saving...</span>
                 )}
               </div>
-              
+
               {currentQuestionIndex === questions.length - 1 ? (
                 <button
                   onClick={() => setShowConfirmSubmit(true)}
@@ -514,24 +538,25 @@ export default function AssessmentTaking({
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Question Navigator
             </h3>
-            
+
             <div className="grid grid-cols-5 gap-2 mb-6">
               {questions.map((_, index) => {
-                const questionId = questions[index].question.id;
+                const question = questions[index];
+                const questionId = question.id;
                 const isAnswered = answers[questionId] !== undefined;
                 const isFlagged = flaggedQuestions.has(questionId);
                 const isCurrent = index === currentQuestionIndex;
-                
+
                 return (
                   <button
                     key={index}
                     onClick={() => handleQuestionJump(index)}
                     className={`w-10 h-10 rounded-lg text-sm font-medium transition-all relative ${
                       isCurrent
-                        ? 'bg-blue-600 text-white'
+                        ? "bg-blue-600 text-white"
                         : isAnswered
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? "bg-green-100 text-green-800 hover:bg-green-200"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
                     {index + 1}
@@ -542,7 +567,7 @@ export default function AssessmentTaking({
                 );
               })}
             </div>
-            
+
             <div className="text-sm text-gray-600 space-y-2">
               <div className="flex items-center">
                 <div className="w-4 h-4 bg-green-100 rounded mr-2"></div>

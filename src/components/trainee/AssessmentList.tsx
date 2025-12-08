@@ -72,12 +72,17 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
     }
   };
 
-  const handleStartAssessment = (assessmentId: number) => {
-    router.push(`/trainee/assessments/${assessmentId}`);
+  const handleStartAssessment = (assessment: Assessment) => {
+    // If there's an active attempt, resume it; otherwise start new
+    if (assessment.has_active_attempt && assessment.active_attempt_id) {
+      router.push(`/assessments/${assessment.id}?attemptId=${assessment.active_attempt_id}`);
+    } else {
+      router.push(`/assessments/${assessment.id}`);
+    }
   };
 
   const handleViewResults = (assessmentId: number, attemptId: number) => {
-    router.push(`/trainee/assessments/${assessmentId}/results/${attemptId}`);
+    router.push(`/assessments/${assessmentId}/results/${attemptId}`);
   };
 
   const filteredAssessments = assessments.filter((assessment) => {
@@ -91,18 +96,12 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
   });
 
   const getAssessmentStatus = (assessment: Assessment) => {
-    if (!assessment.attempts || assessment.attempts.length === 0) {
-      return { status: 'not_started', color: 'bg-gray-100 text-gray-800', text: 'Not Started' };
-    }
-
-    const latestAttempt = assessment.attempts[assessment.attempts.length - 1];
-    
-    if (latestAttempt.status === 'in_progress') {
+    if (assessment.has_active_attempt) {
       return { status: 'in_progress', color: 'bg-blue-100 text-blue-800', text: 'In Progress' };
     }
     
-    if (latestAttempt.status === 'submitted') {
-      const passed = latestAttempt.is_passed;
+    if (assessment.last_attempt) {
+      const passed = assessment.last_attempt.is_passed;
       return {
         status: 'completed',
         color: passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
@@ -110,11 +109,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
       };
     }
     
-    if (latestAttempt.status === 'expired') {
-      return { status: 'expired', color: 'bg-red-100 text-red-800', text: 'Expired' };
-    }
-
-    return { status: 'unknown', color: 'bg-gray-100 text-gray-800', text: 'Unknown' };
+    return { status: 'not_started', color: 'bg-gray-100 text-gray-800', text: 'Not Started' };
   };
 
   if (loading) {
@@ -289,10 +284,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
         ) : (
           filteredAssessments.map((assessment) => {
             const status = getAssessmentStatus(assessment);
-            const latestAttempt = assessment.attempts?.[assessment.attempts.length - 1];
-            const canAttempt = !latestAttempt || 
-                              (latestAttempt.status !== 'in_progress' && 
-                               assessment.attempts!.length < assessment.max_attempts);
+            const latestAttempt = assessment.last_attempt;
 
             return (
               <div
@@ -351,17 +343,15 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                               Latest Attempt
                             </p>
                             <p className="text-xs text-gray-500">
-                              {new Date(latestAttempt.started_at).toLocaleString()}
+                              {new Date(latestAttempt.submitted_at).toLocaleString()}
                             </p>
                           </div>
                           <div className="text-right">
-                            {latestAttempt.percentage !== undefined && (
-                              <span className={`text-lg font-bold ${getScoreBadgeColor(latestAttempt.percentage)}`}>
-                                {latestAttempt.percentage}%
-                              </span>
-                            )}
-                            <p className={`text-xs px-2 py-1 rounded-full mt-1 ${getStatusColor(latestAttempt.status)}`}>
-                              {getStatusText(latestAttempt.status)}
+                            <span className={`text-lg font-bold ${getScoreBadgeColor(latestAttempt.percentage)}`}>
+                              {latestAttempt.percentage}%
+                            </span>
+                            <p className={`text-xs px-2 py-1 rounded-full mt-1 ${latestAttempt.is_passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {latestAttempt.is_passed ? 'Passed' : 'Failed'}
                             </p>
                           </div>
                         </div>
@@ -371,21 +361,21 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
 
                   {/* Action Buttons */}
                   <div className="ml-6 flex flex-col space-y-2">
-                    {latestAttempt?.status === 'in_progress' ? (
+                    {assessment.has_active_attempt ? (
                       <button
-                        onClick={() => handleStartAssessment(assessment.id)}
+                        onClick={() => handleStartAssessment(assessment)}
                         className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         <PlayIcon className="w-4 h-4 mr-2" />
                         Resume
                       </button>
-                    ) : canAttempt ? (
+                    ) : assessment.can_attempt ? (
                       <button
-                        onClick={() => handleStartAssessment(assessment.id)}
+                        onClick={() => handleStartAssessment(assessment)}
                         className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                       >
                         <PlayIcon className="w-4 h-4 mr-2" />
-                        {latestAttempt ? 'Retake' : 'Start'}
+                        {assessment.attempts_count && assessment.attempts_count > 0 ? 'Retake' : 'Start'}
                       </button>
                     ) : (
                       <span className="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-600 rounded-lg cursor-not-allowed">
@@ -393,7 +383,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                       </span>
                     )}
 
-                    {latestAttempt?.status === 'submitted' && (
+                    {latestAttempt && (
                       <button
                         onClick={() => handleViewResults(assessment.id, latestAttempt.id)}
                         className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
