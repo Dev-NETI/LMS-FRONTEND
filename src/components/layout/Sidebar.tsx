@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   HomeIcon,
   BookOpenIcon,
@@ -13,7 +13,8 @@ import {
   QuestionMarkCircleIcon,
   UserIcon,
   XMarkIcon,
-} from '@heroicons/react/24/outline';
+  PencilIcon,
+} from "@heroicons/react/24/outline";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,17 +22,18 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'My Courses', href: '/courses', icon: BookOpenIcon },
-  { name: 'Schedule', href: '/schedule', icon: CalendarIcon },
-  { name: 'Progress', href: '/progress', icon: ChartBarIcon },
-  { name: 'Certificates', href: '/certificates', icon: AcademicCapIcon },
-  { name: 'Messages', href: '/messages', icon: ChatBubbleLeftRightIcon },
+  { name: "Dashboard", href: "/dashboard", icon: HomeIcon },
+  { name: "My Course", href: "/courses", icon: BookOpenIcon },
+  { name: "Assessment", href: "/assessments", icon: PencilIcon },
+  { name: "Schedule", href: "/schedule", icon: CalendarIcon },
+  { name: "Progress", href: "/progress", icon: ChartBarIcon },
+  { name: "Certificates", href: "/certificates", icon: AcademicCapIcon },
+  { name: "Messages", href: "/messages", icon: ChatBubbleLeftRightIcon },
 ];
 
 const secondaryNavigation = [
-  { name: 'Help & Support', href: '/support', icon: QuestionMarkCircleIcon },
-  { name: 'Profile', href: '/profile', icon: UserIcon },
+  { name: "Help & Support", href: "/support", icon: QuestionMarkCircleIcon },
+  { name: "Profile", href: "/profile", icon: UserIcon },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -50,7 +52,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <div
         className={`fixed left-0 w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:fixed lg:z-40 top-0 h-full lg:top-16 lg:h-[calc(100%-4rem)]`}
       >
         <div className="flex flex-col h-full">
@@ -82,13 +84,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     href={item.href}
                     className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-600'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                        ? "bg-blue-50 text-blue-700 border-r-4 border-blue-600"
+                        : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                     }`}
                   >
                     <item.icon
                       className={`w-5 h-5 ${
-                        isActive ? 'text-blue-600' : 'text-gray-400'
+                        isActive ? "text-blue-600" : "text-gray-400"
                       }`}
                     />
                     <span>{item.name}</span>
@@ -110,13 +112,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     href={item.href}
                     className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-600'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                        ? "bg-blue-50 text-blue-700 border-r-4 border-blue-600"
+                        : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                     }`}
                   >
                     <item.icon
                       className={`w-5 h-5 ${
-                        isActive ? 'text-blue-600' : 'text-gray-400'
+                        isActive ? "text-blue-600" : "text-gray-400"
                       }`}
                     />
                     <span>{item.name}</span>
