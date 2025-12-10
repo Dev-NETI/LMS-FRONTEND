@@ -407,6 +407,54 @@ export const getAdminAssessmentStats = async (assessmentId: number): Promise<{
   }
 };
 
+// Schedule Assignment Functions (Admin)
+
+// Get course schedules
+export const getCourseSchedules = async (courseId: number): Promise<{
+  success: boolean;
+  data: any[];
+}> => {
+  try {
+    const response = await api.get(`/api/admin/courses/${courseId}/schedules`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching course schedules:', error);
+    throw error;
+  }
+};
+
+// Assign assessment to schedules
+export const assignAssessmentToSchedules = async (assessmentId: number, data: {
+  schedule_ids: number[];
+  available_from?: string | null;
+  available_until?: string | null;
+}): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await api.post(`/api/admin/assessments/${assessmentId}/assign-schedules`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error assigning assessment to schedules:', error);
+    throw error;
+  }
+};
+
+// Remove assessment from schedule
+export const removeAssessmentFromSchedule = async (assessmentId: number, scheduleId: number): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const response = await api.delete(`/api/admin/assessments/${assessmentId}/schedules/${scheduleId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error removing assessment from schedule:', error);
+    throw error;
+  }
+};
+
 // Utility functions
 export const formatTimeLimit = (minutes: number): string => {
   if (minutes < 60) {

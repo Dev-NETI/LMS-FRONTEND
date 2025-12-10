@@ -12,17 +12,38 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { getQuestionsByCourse, Question } from "@/src/services/questionBankService";
+import {
+  getQuestionsByCourse,
+  Question,
+} from "@/src/services/questionBankService";
 import {
   Assessment,
   getAssessmentsByCourse,
   createAssessment,
   updateAssessment,
   deleteAssessment,
+  getCourseSchedules,
+  assignAssessmentToSchedules,
+  removeAssessmentFromSchedule,
 } from "@/src/services/assessmentService";
 
 interface AssessmentManagementProps {
   courseId: number;
+}
+
+interface Schedule {
+  scheduleid: number;
+  batchno: string;
+  startdateformat: string;
+  enddateformat: string;
+}
+
+interface AssignedSchedule {
+  schedule_id: number;
+  schedule_name: string;
+  schedule_code: string;
+  available_from?: string;
+  available_until?: string;
 }
 
 export default function AssessmentManagement({
@@ -30,14 +51,21 @@ export default function AssessmentManagement({
 }: AssessmentManagementProps) {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showQuestionSelector, setShowQuestionSelector] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState<number | null>(
     null
   );
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
+  const [selectedScheduleIds, setSelectedScheduleIds] = useState<number[]>([]);
+  const [scheduleAssignmentData, setScheduleAssignmentData] = useState({
+    available_from: "",
+    available_until: "",
+  });
 
   const [formData, setFormData] = useState({
     title: "",
@@ -54,6 +82,7 @@ export default function AssessmentManagement({
   useEffect(() => {
     fetchAssessments();
     fetchQuestions();
+    fetchSchedules();
   }, [courseId]);
 
   const fetchAssessments = async () => {
@@ -80,6 +109,17 @@ export default function AssessmentManagement({
       console.log(response.data);
     } catch (err) {
       console.error("Error fetching questions:", err);
+    }
+  };
+
+  const fetchSchedules = async () => {
+    try {
+      const response = await getCourseSchedules(courseId);
+      if (response.success) {
+        setSchedules(response.data);
+      }
+    } catch (err) {
+      console.error("Error fetching schedules:", err);
     }
   };
 
@@ -161,6 +201,65 @@ export default function AssessmentManagement({
     );
   };
 
+  const handleScheduleSelection = (scheduleId: number) => {
+    setSelectedScheduleIds((prev) =>
+      prev.includes(scheduleId)
+        ? prev.filter((id) => id !== scheduleId)
+        : [...prev, scheduleId]
+    );
+  };
+
+  const handleAssignToSchedules = async () => {
+    if (!selectedAssessment || selectedScheduleIds.length === 0) return;
+
+    try {
+      const response = await assignAssessmentToSchedules(selectedAssessment, {
+        schedule_ids: selectedScheduleIds,
+        available_from: scheduleAssignmentData.available_from || null,
+        available_until: scheduleAssignmentData.available_until || null,
+      });
+
+      if (response.success) {
+        setShowScheduleModal(false);
+        setSelectedScheduleIds([]);
+        setScheduleAssignmentData({ available_from: "", available_until: "" });
+        fetchAssessments(); // Refresh to show new assignments
+        setError(null);
+      }
+    } catch (err: any) {
+      console.error("Error assigning to schedules:", err);
+      setError(err.response?.data?.message || "Failed to assign to schedules");
+    }
+  };
+
+  const handleRemoveFromSchedule = async (
+    assessmentId: number,
+    scheduleId: number
+  ) => {
+    if (
+      !confirm(
+        "Are you sure you want to remove this assessment from the schedule?"
+      )
+    )
+      return;
+
+    try {
+      const response = await removeAssessmentFromSchedule(assessmentId, scheduleId);
+
+      if (response.success) {
+        fetchAssessments(); // Refresh to show changes
+      }
+    } catch (err: any) {
+      console.error("Error removing from schedule:", err);
+      setError(err.response?.data?.message || "Failed to remove from schedule");
+    }
+  };
+
+  const openScheduleAssignmentModal = (assessmentId: number) => {
+    setSelectedAssessment(assessmentId);
+    setShowScheduleModal(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -238,7 +337,7 @@ export default function AssessmentManagement({
 
                   <p className="text-gray-600 mb-4">{assessment.description}</p>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                     <div className="flex items-center text-gray-600">
                       <ClockIcon className="w-4 h-4 mr-2" />
                       {assessment.time_limit} minutes
@@ -257,9 +356,69 @@ export default function AssessmentManagement({
                       </span>
                     </div>
                   </div>
+
+                  {/* Schedule Assignments */}
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Assigned Schedules:
+                    </h4>
+                    {(assessment as any).assigned_schedules?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {(assessment as any).assigned_schedules.map(
+                          (schedule: AssignedSchedule) => (
+                            <div
+                              key={schedule.schedule_id}
+                              className="flex items-center bg-blue-50 text-blue-800 px-3 py-1 rounded-full text-sm"
+                            >
+                              <span className="mr-2">
+                                {schedule.schedule_code} -{" "}
+                                {schedule.schedule_name}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  handleRemoveFromSchedule(
+                                    assessment.id,
+                                    schedule.schedule_id
+                                  )
+                                }
+                                className="text-blue-600 hover:text-blue-800 ml-1"
+                                title="Remove from schedule"
+                              >
+                                <XCircleIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+                        ⚠️ Not assigned to any schedule - trainees cannot access
+                        this assessment
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2 ml-4">
+                  <button
+                    onClick={() => openScheduleAssignmentModal(assessment.id)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    title="Assign to Schedules"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </button>
                   <button
                     onClick={() =>
                       handleToggleActive(assessment.id, assessment.is_active)
@@ -544,6 +703,102 @@ export default function AssessmentManagement({
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Assignment Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">
+                Assign Assessment to Schedules
+              </h3>
+
+              <div className="space-y-6">
+                {/* Schedule Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Select Schedules ({selectedScheduleIds.length} selected)
+                  </label>
+                  <div className="max-h-64 overflow-y-auto space-y-2 border border-gray-200 rounded-lg p-3">
+                    {schedules.map((schedule) => (
+                      <div
+                        key={schedule.scheduleid}
+                        className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                          selectedScheduleIds.includes(schedule.scheduleid)
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        onClick={() =>
+                          handleScheduleSelection(schedule.scheduleid)
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {schedule.batchno}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {new Date(
+                                schedule.startdateformat
+                              ).toLocaleDateString()}{" "}
+                              -{" "}
+                              {new Date(
+                                schedule.enddateformat
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={selectedScheduleIds.includes(
+                              schedule.scheduleid
+                            )}
+                            onChange={() =>
+                              handleScheduleSelection(schedule.scheduleid)
+                            }
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {selectedScheduleIds.length === 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-amber-800 text-sm">
+                      Please select at least one schedule to assign the
+                      assessment.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-4">
+                  <button
+                    onClick={() => {
+                      setShowScheduleModal(false);
+                      setSelectedScheduleIds([]);
+                      setScheduleAssignmentData({
+                        available_from: "",
+                        available_until: "",
+                      });
+                    }}
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAssignToSchedules}
+                    disabled={selectedScheduleIds.length === 0}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Assign to Schedules
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
