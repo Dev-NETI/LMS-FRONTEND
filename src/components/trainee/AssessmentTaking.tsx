@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Assessment,
   AssessmentAttempt,
-  AssessmentQuestion,
   FlattenedQuestion,
   startAssessment,
   resumeAssessment,
@@ -15,7 +14,6 @@ import {
 import { securityLogger } from "@/src/services/securityService";
 import {
   ClockIcon,
-  CheckCircleIcon,
   ExclamationTriangleIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -43,6 +41,7 @@ export default function AssessmentTaking({
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restoringAnswers, setRestoringAnswers] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(
     new Set()
@@ -58,6 +57,8 @@ export default function AssessmentTaking({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const autoSaveRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
+  const answersRef = useRef<{ [questionId: number]: any }>({});
+  const attemptRef = useRef<AssessmentAttempt | null>(null);
 
   useEffect(() => {
     if (attemptId) {
@@ -71,6 +72,15 @@ export default function AssessmentTaking({
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
     };
   }, [assessmentId, attemptId]);
+
+  // Update refs when state changes
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
+  useEffect(() => {
+    attemptRef.current = attempt;
+  }, [attempt]);
 
   // Timer effect
   useEffect(() => {
@@ -109,6 +119,18 @@ export default function AssessmentTaking({
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Save answers before page unload
+      try {
+        if (attemptRef.current && Object.keys(answersRef.current).length > 0) {
+          localStorage.setItem(
+            `assessment_${assessmentId}_attempt_${attemptRef.current.id}_answers`,
+            JSON.stringify(answersRef.current)
+          );
+        }
+      } catch (err) {
+        // Continue even if backup fails
+      }
+
       if (attempt && !submitting) {
         e.preventDefault();
         e.returnValue =
@@ -164,6 +186,18 @@ export default function AssessmentTaking({
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+
+      // Save answers on component unmount
+      try {
+        if (attemptRef.current && Object.keys(answersRef.current).length > 0) {
+          localStorage.setItem(
+            `assessment_${assessmentId}_attempt_${attemptRef.current.id}_answers`,
+            JSON.stringify(answersRef.current)
+          );
+        }
+      } catch (err) {
+        // Continue even if backup fails
+      }
     };
   }, [attempt, submitting]);
 
@@ -173,15 +207,54 @@ export default function AssessmentTaking({
       const response = await startAssessment(assessmentId);
 
       if (response.success) {
+        setAssessment(response.assessment);
         setAttempt(response.attempt);
         setQuestions(response.questions);
         setTimeRemaining(response.time_limit * 60); // Convert minutes to seconds
 
-        // Initialize answers from existing saved answers
+        // Initialize answers from existing saved answers - handles page refresh
         const initialAnswers: { [questionId: number]: any } = {};
-        response.attempt.answers?.forEach((answer) => {
-          initialAnswers[answer.question_id] = answer.answer_data;
+        if (
+          response.attempt.answers &&
+          Array.isArray(response.attempt.answers)
+        ) {
+          response.attempt.answers.forEach((answer) => {
+            if (
+              answer.question_id &&
+              answer.answer_data !== null &&
+              answer.answer_data !== undefined
+            ) {
+              initialAnswers[answer.question_id] = answer.answer_data;
+            }
+          });
+        }
+
+        // Also check if questions have saved_answer property
+        response.questions.forEach((question) => {
+          if (
+            question.saved_answer !== null &&
+            question.saved_answer !== undefined
+          ) {
+            initialAnswers[question.id] = question.saved_answer;
+          }
         });
+
+        // Try to merge with localStorage backup if available
+        setRestoringAnswers(true);
+        try {
+          const localStorageKey = `assessment_${assessmentId}_attempt_${response.attempt.id}_answers`;
+          const backupAnswers = localStorage.getItem(localStorageKey);
+          if (backupAnswers) {
+            const parsedBackup = JSON.parse(backupAnswers);
+            // Merge server answers with local backup, preferring local for newer changes
+            Object.assign(initialAnswers, parsedBackup);
+          }
+        } catch (err) {
+          // Continue without localStorage backup
+        } finally {
+          setRestoringAnswers(false);
+        }
+
         setAnswers(initialAnswers);
       }
     } catch (err: any) {
@@ -197,16 +270,56 @@ export default function AssessmentTaking({
       const response = await resumeAssessment(attemptId!, assessmentId);
 
       if (response.success) {
+        setAssessment(response.assessment);
         setAttempt(response.attempt);
         setQuestions(response.questions);
         setTimeRemaining(response.attempt.time_remaining || 0);
         setShowInstructions(false);
 
-        // Load existing answers
+        // Load existing answers - improved logic for page refresh
         const savedAnswers: { [questionId: number]: any } = {};
-        response.attempt.answers?.forEach((answer) => {
-          savedAnswers[answer.question_id] = answer.answer_data;
-        });
+
+        // Primary source: attempt answers
+        if (
+          response.attempt.answers &&
+          Array.isArray(response.attempt.answers)
+        ) {
+          response.attempt.answers.forEach((answer) => {
+            if (
+              answer.question_id &&
+              answer.answer_data !== null &&
+              answer.answer_data !== undefined
+            ) {
+              savedAnswers[answer.question_id] = answer.answer_data;
+            }
+          });
+        }
+
+        // Secondary source: questions with saved_answer
+        if (response.questions && Array.isArray(response.questions)) {
+          response.questions.forEach((question) => {
+            if (
+              question.saved_answer !== null &&
+              question.saved_answer !== undefined
+            ) {
+              savedAnswers[question.id] = question.saved_answer;
+            }
+          });
+        }
+
+        // Try to merge with localStorage backup if available
+        try {
+          const localStorageKey = `assessment_${assessmentId}_attempt_${response.attempt.id}_answers`;
+          const backupAnswers = localStorage.getItem(localStorageKey);
+          if (backupAnswers) {
+            const parsedBackup = JSON.parse(backupAnswers);
+            // Merge server answers with local backup, preferring local for newer changes
+            Object.assign(savedAnswers, parsedBackup);
+          }
+        } catch (err) {
+          // Continue without localStorage backup
+        }
+
         setAnswers(savedAnswers);
       }
     } catch (err: any) {
@@ -222,19 +335,32 @@ export default function AssessmentTaking({
     try {
       setSaving(true);
       await saveAnswer(assessmentId, questionId, answerData);
-      console.log(`Answer saved for question ${questionId}`);
     } catch (err) {
-      console.error("Immediate save failed:", err);
+      // Silent fail for auto-save to avoid disrupting user experience
     } finally {
       setSaving(false);
     }
   };
 
   const handleAnswerChange = (questionId: number, answerData: any) => {
-    setAnswers((prev) => ({
-      ...prev,
+    const newAnswers = {
+      ...answers,
       [questionId]: answerData,
-    }));
+    };
+
+    setAnswers(newAnswers);
+
+    // Backup to localStorage for page refresh recovery
+    try {
+      if (attempt) {
+        localStorage.setItem(
+          `assessment_${assessmentId}_attempt_${attempt.id}_answers`,
+          JSON.stringify(newAnswers)
+        );
+      }
+    } catch (err) {
+      // localStorage may be disabled - continue without it
+    }
 
     // Clear existing auto-save timeout
     if (autoSaveRef.current) {
@@ -286,7 +412,7 @@ export default function AssessmentTaking({
       await document.documentElement.requestFullscreen();
       setIsFullscreen(true);
     } catch (err) {
-      console.error("Failed to enter fullscreen:", err);
+      // Fullscreen request failed - continue without it
       setSuspiciousActivity((prev) => [
         ...prev,
         `Fullscreen denied at ${new Date().toISOString()}`,
@@ -328,9 +454,8 @@ export default function AssessmentTaking({
 
     try {
       await Promise.all(savePromises);
-      console.log("All answers saved before submission");
     } catch (err) {
-      console.error("Some answers failed to save before submission:", err);
+      // Continue with submission even if some saves failed
     }
   };
 
@@ -347,7 +472,9 @@ export default function AssessmentTaking({
       await securityLogger.logAssessmentCompleted({
         tabSwitches: tabSwitchCount,
         suspiciousActivities: suspiciousActivity.length,
-        completionTime: startTimeRef.current ? Date.now() - startTimeRef.current.getTime() : 0
+        completionTime: startTimeRef.current
+          ? Date.now() - startTimeRef.current.getTime()
+          : 0,
       });
 
       // Prepare answers for submission
@@ -373,6 +500,15 @@ export default function AssessmentTaking({
       });
 
       if (response.success) {
+        // Clean up localStorage after successful submission
+        try {
+          localStorage.removeItem(
+            `assessment_${assessmentId}_attempt_${attempt.id}_answers`
+          );
+        } catch (err) {
+          // Continue even if cleanup fails
+        }
+
         router.push(`/assessments/${assessmentId}/results/${attempt.id}`);
       }
     } catch (err: any) {
@@ -382,9 +518,6 @@ export default function AssessmentTaking({
   };
 
   const renderQuestionContent = (question: FlattenedQuestion) => {
-    console.log("Question data:", question);
-    console.log("Question ID:", question.id);
-    console.log("Question type:", question.question_type);
     const currentAnswer = answers[question.id];
 
     return (
@@ -725,6 +858,11 @@ export default function AssessmentTaking({
               </button>
 
               <div className="flex items-center space-x-2">
+                {restoringAnswers && (
+                  <span className="text-sm text-blue-500">
+                    Restoring answers...
+                  </span>
+                )}
                 {saving && (
                   <span className="text-sm text-gray-500">Saving...</span>
                 )}
