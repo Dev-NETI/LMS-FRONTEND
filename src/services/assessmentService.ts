@@ -91,11 +91,18 @@ export interface StartAssessmentResponse {
 }
 
 export interface SubmitAssessmentData {
+  assessment_id: number;
   attempt_id: number;
   answers: {
     question_id: number;
     answer_data: any;
   }[];
+  security_data?: {
+    tab_switches: number;
+    suspicious_activities: string[];
+    window_focus_lost: boolean;
+    completion_time: number;
+  };
 }
 
 export interface AssessmentResult {
@@ -181,14 +188,13 @@ export const startAssessment = async (assessmentId: number): Promise<StartAssess
 };
 
 // Save answer for a question (auto-save)
-export const saveAnswer = async (attemptId: number, questionId: number, answerData: any): Promise<{
+export const saveAnswer = async (assessmentId: number, questionId: number, answerData: any): Promise<{
   success: boolean;
   message: string;
 }> => {
   try {
-    const response = await api.post(`/api/trainee/assessment-attempts/${attemptId}/answers`, {
-      question_id: questionId,
-      answer_data: answerData
+    const response = await api.post(`/api/trainee/assessments/${assessmentId}/questions/${questionId}/answer`, {
+      answer: answerData
     });
     return response.data;
   } catch (error) {
@@ -204,7 +210,7 @@ export const submitAssessment = async (data: SubmitAssessmentData): Promise<{
   result?: AssessmentResult;
 }> => {
   try {
-    const response = await api.post(`/api/trainee/assessment-attempts/${data.attempt_id}/submit`, {
+    const response = await api.post(`/api/trainee/assessments/${data.assessment_id}/submit`, {
       answers: data.answers
     });
     return response.data;

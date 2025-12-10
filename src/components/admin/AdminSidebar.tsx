@@ -98,33 +98,9 @@ const courseManagement = [
 
 const systemManagement = [
   {
-    name: "Announcements",
-    href: "/admin/announcements",
-    icon: BellIcon,
-    current: false,
-  },
-  {
-    name: "Reports",
-    href: "/admin/reports",
-    icon: DocumentDuplicateIcon,
-    current: false,
-  },
-  {
-    name: "Schedule",
-    href: "/admin/schedule",
-    icon: CalendarIcon,
-    current: false,
-  },
-  {
-    name: "System Logs",
-    href: "/admin/logs",
+    name: "Assessment Logs",
+    href: "/admin/assessment_logs",
     icon: ExclamationTriangleIcon,
-    current: false,
-  },
-  {
-    name: "Settings",
-    href: "/admin/settings",
-    icon: CogIcon,
     current: false,
   },
 ];

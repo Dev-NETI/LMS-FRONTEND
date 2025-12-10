@@ -12,6 +12,7 @@ import {
   submitAssessment,
   formatTimeRemaining,
 } from "@/src/services/assessmentService";
+import { securityLogger } from "@/src/services/securityService";
 import {
   ClockIcon,
   CheckCircleIcon,
@@ -48,8 +49,15 @@ export default function AssessmentTaking({
   );
   const [showInstructions, setShowInstructions] = useState(true);
 
+  // Anti-cheating states
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [suspiciousActivity, setSuspiciousActivity] = useState<string[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [windowFocused, setWindowFocused] = useState(true);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const autoSaveRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<Date | null>(null);
 
   useEffect(() => {
     if (attemptId) {
@@ -83,18 +91,81 @@ export default function AssessmentTaking({
     }
   }, [timeRemaining, showInstructions]);
 
-  // Auto-save effect
+  // Anti-cheating monitoring effects
   useEffect(() => {
-    if (attempt && questions.length > 0 && !showInstructions) {
-      autoSaveRef.current = setTimeout(() => {
-        autoSaveCurrentAnswer();
-      }, 2000); // Auto-save after 2 seconds of inactivity
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitchCount((prev) => prev + 1);
+        setSuspiciousActivity((prev) => [
+          ...prev,
+          `Tab switch at ${new Date().toISOString()}`,
+        ]);
+        setWindowFocused(false);
+        // Log tab switch using security service
+        securityLogger.logTabSwitch();
+      } else {
+        setWindowFocused(true);
+      }
+    };
 
-      return () => {
-        if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
-      };
-    }
-  }, [answers, currentQuestionIndex]);
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (attempt && !submitting) {
+        e.preventDefault();
+        e.returnValue =
+          "Your assessment progress will be lost. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    const handleRightClick = (e: MouseEvent) => {
+      e.preventDefault();
+      setSuspiciousActivity((prev) => [
+        ...prev,
+        `Right click blocked at ${new Date().toISOString()}`,
+      ]);
+      // Log right-click attempt using security service
+      securityLogger.logRightClickBlocked();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block common cheating shortcuts
+      if (
+        e.key === "F12" || // Dev tools
+        (e.ctrlKey && e.shiftKey && e.key === "I") || // Dev tools
+        (e.ctrlKey && e.shiftKey && e.key === "J") || // Console
+        (e.ctrlKey && e.key === "u") || // View source
+        (e.ctrlKey && e.key === "r") || // Refresh
+        e.key === "F5" // Refresh
+      ) {
+        e.preventDefault();
+        setSuspiciousActivity((prev) => [
+          ...prev,
+          `Blocked shortcut: ${e.key} at ${new Date().toISOString()}`,
+        ]);
+        // Log blocked shortcut using security service
+        securityLogger.logShortcutBlocked(e.key);
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("contextmenu", handleRightClick);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("contextmenu", handleRightClick);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    };
+  }, [attempt, submitting]);
 
   const startNewAssessment = async () => {
     try {
@@ -145,21 +216,17 @@ export default function AssessmentTaking({
     }
   };
 
-  const autoSaveCurrentAnswer = async () => {
-    if (!attempt || questions.length === 0 || saving) return;
+  const saveAnswerImmediately = async (questionId: number, answerData: any) => {
+    if (!attempt || saving) return;
 
-    const currentQuestion = questions[currentQuestionIndex];
-    const answer = answers[currentQuestion.id];
-
-    if (answer !== undefined) {
-      try {
-        setSaving(true);
-        await saveAnswer(attempt.id, currentQuestion.id, answer);
-      } catch (err) {
-        console.error("Auto-save failed:", err);
-      } finally {
-        setSaving(false);
-      }
+    try {
+      setSaving(true);
+      await saveAnswer(assessmentId, questionId, answerData);
+      console.log(`Answer saved for question ${questionId}`);
+    } catch (err) {
+      console.error("Immediate save failed:", err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -168,22 +235,65 @@ export default function AssessmentTaking({
       ...prev,
       [questionId]: answerData,
     }));
+
+    // Clear existing auto-save timeout
+    if (autoSaveRef.current) {
+      clearTimeout(autoSaveRef.current);
+    }
+
+    // Debounced save after 500ms of no changes
+    autoSaveRef.current = setTimeout(() => {
+      saveAnswerImmediately(questionId, answerData);
+    }, 500);
   };
 
-  const handleNextQuestion = () => {
+  const saveCurrentQuestionAnswer = async () => {
+    const currentQuestion = questions[currentQuestionIndex];
+    const answer = answers[currentQuestion?.id];
+
+    if (currentQuestion && answer !== undefined) {
+      await saveAnswerImmediately(currentQuestion.id, answer);
+    }
+  };
+
+  const handleNextQuestion = async () => {
+    // Save current answer before navigating
+    await saveCurrentQuestionAnswer();
+
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
-  const handlePreviousQuestion = () => {
+  const handlePreviousQuestion = async () => {
+    // Save current answer before navigating
+    await saveCurrentQuestionAnswer();
+
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
-  const handleQuestionJump = (index: number) => {
+  const handleQuestionJump = async (index: number) => {
+    // Save current answer before jumping
+    await saveCurrentQuestionAnswer();
+
     setCurrentQuestionIndex(index);
+  };
+
+  const enterFullscreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } catch (err) {
+      console.error("Failed to enter fullscreen:", err);
+      setSuspiciousActivity((prev) => [
+        ...prev,
+        `Fullscreen denied at ${new Date().toISOString()}`,
+      ]);
+      // Log fullscreen denial using security service
+      securityLogger.logFullscreenDenied();
+    }
   };
 
   const toggleFlag = (questionId: number) => {
@@ -203,11 +313,42 @@ export default function AssessmentTaking({
     await handleSubmitAssessment();
   };
 
+  // Initialize security logging when component mounts or attempt changes
+  useEffect(() => {
+    if (assessmentId && attempt) {
+      securityLogger.initialize(assessmentId, attempt.id);
+    }
+  }, [assessmentId, attempt]);
+
+  const saveAllAnswersBeforeSubmit = async () => {
+    const savePromises = Object.entries(answers).map(
+      ([questionId, answerData]) =>
+        saveAnswerImmediately(parseInt(questionId), answerData)
+    );
+
+    try {
+      await Promise.all(savePromises);
+      console.log("All answers saved before submission");
+    } catch (err) {
+      console.error("Some answers failed to save before submission:", err);
+    }
+  };
+
   const handleSubmitAssessment = async () => {
     if (!attempt) return;
 
     try {
       setSubmitting(true);
+
+      // Save all answers before submission to ensure nothing is lost
+      await saveAllAnswersBeforeSubmit();
+
+      // Log assessment completion using security service
+      await securityLogger.logAssessmentCompleted({
+        tabSwitches: tabSwitchCount,
+        suspiciousActivities: suspiciousActivity.length,
+        completionTime: startTimeRef.current ? Date.now() - startTimeRef.current.getTime() : 0
+      });
 
       // Prepare answers for submission
       const answersData = Object.entries(answers).map(
@@ -218,8 +359,17 @@ export default function AssessmentTaking({
       );
 
       const response = await submitAssessment({
+        assessment_id: assessmentId,
         attempt_id: attempt.id,
         answers: answersData,
+        security_data: {
+          tab_switches: tabSwitchCount,
+          suspicious_activities: suspiciousActivity,
+          window_focus_lost: !windowFocused,
+          completion_time: startTimeRef.current
+            ? Date.now() - startTimeRef.current.getTime()
+            : 0,
+        },
       });
 
       if (response.success) {
@@ -232,9 +382,9 @@ export default function AssessmentTaking({
   };
 
   const renderQuestionContent = (question: FlattenedQuestion) => {
-    console.log('Question data:', question);
-    console.log('Question ID:', question.id);
-    console.log('Question type:', question.question_type);
+    console.log("Question data:", question);
+    console.log("Question ID:", question.id);
+    console.log("Question type:", question.question_type);
     const currentAnswer = answers[question.id];
 
     return (
@@ -325,7 +475,9 @@ export default function AssessmentTaking({
             <div>
               <textarea
                 value={currentAnswer || ""}
-                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                onChange={(e) =>
+                  handleAnswerChange(question.id, e.target.value)
+                }
                 placeholder="Type your answer here..."
                 className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={4}
@@ -413,7 +565,45 @@ export default function AssessmentTaking({
             </div>
           </div>
 
-          <div className="flex justify-between">
+          {/* Security Requirements */}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+              <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
+              Security & Monitoring Notice
+            </h2>
+            <div className="space-y-3 text-sm text-red-800">
+              <p>
+                • <strong>Full monitoring:</strong> Your activity is being
+                tracked during this assessment
+              </p>
+              <p>
+                • <strong>Tab switching:</strong> Switching tabs or windows will
+                be recorded as suspicious activity
+              </p>
+              <p>
+                • <strong>Right-click disabled:</strong> Context menu is
+                disabled to prevent copying
+              </p>
+              <p>
+                • <strong>Shortcut blocking:</strong> Developer tools and
+                refresh shortcuts are disabled
+              </p>
+              <p>
+                • <strong>Auto-save:</strong> Your answers are automatically
+                saved every 500ms
+              </p>
+              <p>
+                • <strong>Page refresh:</strong> You can safely refresh - your
+                progress will be restored
+              </p>
+              <p className="font-semibold mt-4">
+                ⚠️ Excessive suspicious activity may result in assessment
+                invalidation
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
             <button
               onClick={() => router.back()}
               className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
@@ -421,12 +611,26 @@ export default function AssessmentTaking({
               Cancel
             </button>
 
-            <button
-              onClick={() => setShowInstructions(false)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Start Assessment
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={enterFullscreen}
+                className="px-4 py-3 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50"
+              >
+                Enter Fullscreen
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowInstructions(false);
+                  startTimeRef.current = new Date();
+                  // Log assessment start using security service
+                  securityLogger.logAssessmentStarted();
+                }}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Start Assessment
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -446,6 +650,20 @@ export default function AssessmentTaking({
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-6 py-4">
+          {/* Security Warnings */}
+          {(tabSwitchCount > 0 || !windowFocused) && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center text-sm text-red-800">
+                <ExclamationTriangleIcon className="w-4 h-4 mr-2" />
+                <span>
+                  ⚠️ Security Notice: Tab switches detected ({tabSwitchCount}).
+                  {!windowFocused && " Window focus lost."} This activity is
+                  being monitored.
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-gray-900">
