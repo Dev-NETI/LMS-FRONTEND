@@ -244,7 +244,10 @@ export default function AssessmentManagement({
       return;
 
     try {
-      const response = await removeAssessmentFromSchedule(assessmentId, scheduleId);
+      const response = await removeAssessmentFromSchedule(
+        assessmentId,
+        scheduleId
+      );
 
       if (response.success) {
         fetchAssessments(); // Refresh to show changes
