@@ -5,6 +5,7 @@ import {
   Assessment,
   AssessmentAttempt,
   FlattenedQuestion,
+  getAssessment,
   startAssessment,
   resumeAssessment,
   saveAnswer,
@@ -20,6 +21,7 @@ import {
   FlagIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface AssessmentTakingProps {
   assessmentId: number;
@@ -64,7 +66,7 @@ export default function AssessmentTaking({
     if (attemptId) {
       resumeExistingAssessment();
     } else {
-      startNewAssessment();
+      loadAssessmentForInstructions();
     }
 
     return () => {
@@ -201,12 +203,36 @@ export default function AssessmentTaking({
     };
   }, [attempt, submitting]);
 
+  const loadAssessmentForInstructions = async () => {
+    try {
+      setLoading(true);
+      console.log("Loading assessment details for ID:", assessmentId);
+      const response = await getAssessment(assessmentId);
+
+      if (response.success) {
+        console.log("Assessment details loaded:", response);
+        setAssessment(response.data);
+        // Don't set attempt, questions, or start timer yet - just show instructions
+        setShowInstructions(true);
+      }
+    } catch (err: any) {
+      console.log("Error loading assessment:", err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to load assessment";
+      toast.error(errorMessage);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startNewAssessment = async () => {
     try {
       setLoading(true);
+      console.log("Starting new assessment for ID:", assessmentId);
       const response = await startAssessment(assessmentId);
 
       if (response.success) {
+        console.log("Assessment start response:", response);
         setAssessment(response.assessment);
         setAttempt(response.attempt);
         setQuestions(response.questions);
@@ -256,9 +282,34 @@ export default function AssessmentTaking({
         }
 
         setAnswers(initialAnswers);
+        
+        // Hide instructions and start the assessment
+        setShowInstructions(false);
+        
+        // Check if this is actually resuming an existing attempt based on saved answers
+        const hasExistingAnswers = Object.keys(initialAnswers).length > 0;
+        if (hasExistingAnswers) {
+          toast.success("Assessment resumed successfully!");
+        } else {
+          toast.success("Assessment started successfully!");
+        }
       }
     } catch (err: any) {
-      setError(err.message || "Failed to start assessment");
+      console.log("Error starting assessment:", err);
+      // Check for specific HTTP status codes
+      if (err.response?.status === 409) {
+        toast.error(
+          "Assessment already started! You cannot start a new attempt while one is in progress."
+        );
+        setError(
+          "Assessment already started. Please resume your existing attempt or wait for it to expire."
+        );
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || "Failed to start assessment";
+        console.log("Assessment start error message:", errorMessage);
+        toast.error(errorMessage);
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -321,9 +372,27 @@ export default function AssessmentTaking({
         }
 
         setAnswers(savedAnswers);
+        toast.success("Assessment resumed successfully!");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to resume assessment");
+      // Check for specific HTTP status codes
+      if (err.response?.status === 409) {
+        toast.error(
+          "Cannot resume assessment! There may be a conflict with the current state."
+        );
+        setError(
+          "Cannot resume assessment due to a conflict. Please try starting a new attempt."
+        );
+      } else if (err.response?.status === 404) {
+        toast.error("Assessment attempt not found!");
+        setError(
+          "The assessment attempt you're trying to resume was not found."
+        );
+      } else {
+        const errorMessage = err.message || "Failed to resume assessment";
+        toast.error(errorMessage);
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -464,6 +533,7 @@ export default function AssessmentTaking({
 
     try {
       setSubmitting(true);
+      toast.loading("Submitting assessment...", { id: "submit-assessment" });
 
       // Save all answers before submission to ensure nothing is lost
       await saveAllAnswersBeforeSubmit();
@@ -508,11 +578,23 @@ export default function AssessmentTaking({
         } catch (err) {
           // Continue even if cleanup fails
         }
-
         router.push(`/assessments/${assessmentId}/results/${attempt.id}`);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to submit assessment");
+      // Check for specific HTTP status codes
+      if (err.response?.status === 409) {
+        toast.error(
+          "Assessment submission conflict! The assessment may have already been submitted.",
+          { id: "submit-assessment" }
+        );
+        setError(
+          "Cannot submit assessment due to a conflict. The assessment may have already been submitted."
+        );
+      } else {
+        const errorMessage = err.message || "Failed to submit assessment";
+        toast.error(errorMessage, { id: "submit-assessment" });
+        setError(errorMessage);
+      }
       setSubmitting(false);
     }
   };
@@ -651,7 +733,7 @@ export default function AssessmentTaking({
   }
 
   // Instructions screen
-  if (showInstructions && attempt) {
+  if (showInstructions && assessment) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-white rounded-xl shadow-lg p-8">
@@ -674,13 +756,13 @@ export default function AssessmentTaking({
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-semibold text-blue-900 mb-2">Time Limit</h3>
               <p className="text-blue-800">
-                {formatTimeRemaining(timeRemaining)}
+                {assessment?.time_limit ? `${assessment.time_limit} minutes` : 'No time limit'}
               </p>
             </div>
 
             <div className="bg-green-50 p-4 rounded-lg">
               <h3 className="font-semibold text-green-900 mb-2">Questions</h3>
-              <p className="text-green-800">{questions.length} questions</p>
+              <p className="text-green-800">{assessment?.questions_count || 0} questions</p>
             </div>
 
             <div className="bg-yellow-50 p-4 rounded-lg">
@@ -691,9 +773,9 @@ export default function AssessmentTaking({
             </div>
 
             <div className="bg-purple-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-purple-900 mb-2">Attempts</h3>
+              <h3 className="font-semibold text-purple-900 mb-2">Max Attempts</h3>
               <p className="text-purple-800">
-                {attempt.attempt_number} of {assessment?.max_attempts}
+                {assessment?.max_attempts} attempts allowed
               </p>
             </div>
           </div>
@@ -754,10 +836,10 @@ export default function AssessmentTaking({
 
               <button
                 onClick={() => {
-                  setShowInstructions(false);
                   startTimeRef.current = new Date();
                   // Log assessment start using security service
                   securityLogger.logAssessmentStarted();
+                  startNewAssessment();
                 }}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
