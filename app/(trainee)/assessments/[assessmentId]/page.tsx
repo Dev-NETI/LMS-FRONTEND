@@ -9,17 +9,16 @@ import AssessmentTaking from "@/src/components/trainee/AssessmentTaking";
 export default function AssessmentTakingPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  
+
   const assessmentId = Number(params.assessmentId);
-  const attemptId = searchParams.get('attemptId') ? Number(searchParams.get('attemptId')) : undefined;
+  const attemptId = searchParams.get("attemptId")
+    ? Number(searchParams.get("attemptId"))
+    : undefined;
 
   return (
     <AuthGuard>
       <Layout>
-        <AssessmentTaking 
-          assessmentId={assessmentId}
-          attemptId={attemptId}
-        />
+        <AssessmentTaking assessmentId={assessmentId} attemptId={attemptId} />
       </Layout>
     </AuthGuard>
   );

@@ -19,7 +19,20 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   FlagIcon,
+  AcademicCapIcon,
+  CheckCircleIcon,
+  TrophyIcon,
+  UsersIcon,
+  ShieldCheckIcon,
+  EyeIcon,
+  DocumentTextIcon,
+  PlayIcon,
+  PauseIcon,
+  StopIcon,
+  BookOpenIcon,
+  QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
+import { FlagIcon as FlagIconSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -217,7 +230,10 @@ export default function AssessmentTaking({
       }
     } catch (err: any) {
       console.log("Error loading assessment:", err);
-      const errorMessage = err.response?.data?.message || err.message || "Failed to load assessment";
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to load assessment";
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {
@@ -282,10 +298,10 @@ export default function AssessmentTaking({
         }
 
         setAnswers(initialAnswers);
-        
+
         // Hide instructions and start the assessment
         setShowInstructions(false);
-        
+
         // Check if this is actually resuming an existing attempt based on saved answers
         const hasExistingAnswers = Object.keys(initialAnswers).length > 0;
         if (hasExistingAnswers) {
@@ -305,7 +321,10 @@ export default function AssessmentTaking({
           "Assessment already started. Please resume your existing attempt or wait for it to expire."
         );
       } else {
-        const errorMessage = err.response?.data?.message || err.message || "Failed to start assessment";
+        const errorMessage =
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to start assessment";
         console.log("Assessment start error message:", errorMessage);
         toast.error(errorMessage);
         setError(errorMessage);
@@ -601,16 +620,38 @@ export default function AssessmentTaking({
 
   const renderQuestionContent = (question: FlattenedQuestion) => {
     const currentAnswer = answers[question.id];
+    const isAnswered =
+      currentAnswer !== undefined &&
+      currentAnswer !== null &&
+      currentAnswer !== "";
 
     return (
-      <div className="space-y-6">
-        <div className="flex items-start justify-between">
+      <div className="space-y-8">
+        {/* Question Header */}
+        <div className="flex items-start justify-between ">
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Question {currentQuestionIndex + 1} of {questions.length}
-            </h2>
-            <div className="prose max-w-none">
-              <p className="text-lg text-gray-800 leading-relaxed">
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs ${
+                  isAnswered
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {currentQuestionIndex + 1}
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">
+                  Question {currentQuestionIndex + 1}
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {questions.length} questions total
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <p className="text-sm text-gray-800 leading-relaxed font-medium">
                 {question.question_text}
               </p>
             </div>
@@ -618,87 +659,170 @@ export default function AssessmentTaking({
 
           <button
             onClick={() => toggleFlag(question.id)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`group p-2 rounded-lg transition-all duration-200 ${
               flaggedQuestions.has(question.id)
-                ? "bg-yellow-100 text-yellow-600 hover:bg-yellow-200"
-                : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                ? "bg-amber-100 text-amber-600 hover:bg-amber-200 shadow-lg shadow-amber-500/25"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-amber-600"
             }`}
             title="Flag for review"
           >
-            <FlagIcon className="w-5 h-5" />
+            {flaggedQuestions.has(question.id) ? (
+              <FlagIconSolid className="w-4 h-4" />
+            ) : (
+              <FlagIcon className="w-4 h-4" />
+            )}
           </button>
         </div>
 
-        <div className="mt-8">
+        {/* Answer Options */}
+        <div className="space-y-3">
           {question.question_type === "multiple_choice" && (
-            <div className="space-y-3">
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-gray-700 mb-3">
+                Select one answer:
+              </h3>
               {question.options?.map((option, index) => (
                 <label
                   key={option.id}
-                  className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  className={`group flex items-start p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                    currentAnswer === option.id
+                      ? "border-blue-300 bg-blue-50 shadow-lg shadow-blue-500/10"
+                      : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+                  }`}
                 >
-                  <input
-                    type="radio"
-                    name={`question_${question.id}`}
-                    value={option.id}
-                    checked={currentAnswer === option.id}
-                    onChange={(e) =>
-                      handleAnswerChange(question.id, parseInt(e.target.value))
-                    }
-                    className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-900">{option.text}</span>
+                  <div className="flex items-center h-5">
+                    <input
+                      type="radio"
+                      name={`question_${question.id}`}
+                      value={option.id}
+                      checked={currentAnswer === option.id}
+                      onChange={(e) =>
+                        handleAnswerChange(
+                          question.id,
+                          parseInt(e.target.value)
+                        )
+                      }
+                      className="w-4 h-4 text-blue-600 border-2 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                    />
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <span
+                      className={`text-sm leading-relaxed ${
+                        currentAnswer === option.id
+                          ? "text-blue-900 font-medium"
+                          : "text-gray-800"
+                      }`}
+                    >
+                      {String.fromCharCode(65 + index)}. {option.text}
+                    </span>
+                  </div>
                 </label>
               ))}
             </div>
           )}
 
           {question.question_type === "checkbox" && (
-            <div className="space-y-3">
-              {question.options?.map((option, index) => (
-                <label
-                  key={option.id}
-                  className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={
-                      Array.isArray(currentAnswer) &&
-                      currentAnswer.includes(option.id)
-                    }
-                    onChange={(e) => {
-                      const newAnswer = Array.isArray(currentAnswer)
-                        ? [...currentAnswer]
-                        : [];
-                      if (e.target.checked) {
-                        newAnswer.push(option.id);
-                      } else {
-                        const index = newAnswer.indexOf(option.id);
-                        if (index > -1) newAnswer.splice(index, 1);
-                      }
-                      handleAnswerChange(question.id, newAnswer);
-                    }}
-                    className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-900">{option.text}</span>
-                </label>
-              ))}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-gray-700 mb-3">
+                Select all that apply:
+              </h3>
+              {question.options?.map((option, index) => {
+                const isChecked =
+                  Array.isArray(currentAnswer) &&
+                  currentAnswer.includes(option.id);
+                return (
+                  <label
+                    key={option.id}
+                    className={`group flex items-start p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                      isChecked
+                        ? "border-green-300 bg-green-50 shadow-lg shadow-green-500/10"
+                        : "border-gray-200 hover:border-green-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center h-5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const newAnswer = Array.isArray(currentAnswer)
+                            ? [...currentAnswer]
+                            : [];
+                          if (e.target.checked) {
+                            newAnswer.push(option.id);
+                          } else {
+                            const index = newAnswer.indexOf(option.id);
+                            if (index > -1) newAnswer.splice(index, 1);
+                          }
+                          handleAnswerChange(question.id, newAnswer);
+                        }}
+                        className="w-4 h-4 text-green-600 border-2 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                      />
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <span
+                        className={`text-sm leading-relaxed ${
+                          isChecked
+                            ? "text-green-900 font-medium"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        {String.fromCharCode(65 + index)}. {option.text}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           )}
 
           {question.question_type === "identification" && (
-            <div>
-              <textarea
-                value={currentAnswer || ""}
-                onChange={(e) =>
-                  handleAnswerChange(question.id, e.target.value)
-                }
-                placeholder="Type your answer here..."
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={4}
-              />
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-gray-700 mb-3">
+                Type your answer:
+              </h3>
+              <div className="relative">
+                <textarea
+                  value={currentAnswer || ""}
+                  onChange={(e) =>
+                    handleAnswerChange(question.id, e.target.value)
+                  }
+                  placeholder="Type your answer here..."
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-sm leading-relaxed resize-none"
+                  rows={4}
+                />
+                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                  {(currentAnswer || "").length} characters
+                </div>
+              </div>
             </div>
           )}
+        </div>
+
+        {/* Answer Status */}
+        <div
+          className={`flex items-center justify-center p-2 rounded-lg ${
+            isAnswered
+              ? "bg-green-50 border border-green-200"
+              : "bg-amber-50 border border-amber-200"
+          }`}
+        >
+          <div className="flex items-center">
+            {isAnswered ? (
+              <>
+                <CheckCircleIcon className="w-4 h-4 text-green-600 mr-2" />
+                <span className="text-green-700 text-sm font-medium">
+                  Answer saved
+                </span>
+              </>
+            ) : (
+              <>
+                <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 mr-2" />
+                <span className="text-amber-700 text-sm font-medium">
+                  Please select an answer
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -706,23 +830,38 @@ export default function AssessmentTaking({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-600 opacity-20 animate-pulse"></div>
+          </div>
+          <h3 className="mt-6 text-lg font-semibold text-gray-700">
+            Loading Assessment
+          </h3>
+          <p className="mt-2 text-gray-500">
+            Please wait while we prepare your assessment...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-2xl mx-auto mt-8 p-6 bg-red-50 border border-red-200 rounded-lg">
-        <div className="flex">
-          <ExclamationTriangleIcon className="h-6 w-6 text-red-400 mr-3" />
-          <div>
-            <h3 className="text-lg font-medium text-red-800">Error</h3>
-            <p className="text-red-700 mt-1">{error}</p>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-pink-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-3xl shadow-xl border border-red-100 p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+              <ExclamationTriangleIcon className="h-8 w-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">
+              Assessment Error
+            </h3>
+            <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => router.back()}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-200 font-medium shadow-lg shadow-red-500/25"
             >
               Go Back
             </button>
@@ -735,116 +874,206 @@ export default function AssessmentTaking({
   // Instructions screen
   if (showInstructions && assessment) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            {assessment?.title || "Assessment"}
-          </h1>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="max-w-5xl mx-auto p-6">
+          {/* Header Section */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-4">
+              <AcademicCapIcon className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-2">
+              {assessment?.title || "Assessment"}
+            </h1>
+            <p className="text-lg text-gray-600">
+              Review the instructions below before starting
+            </p>
+          </div>
 
-          {assessment?.instructions && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Instructions
-              </h2>
-              <div className="prose max-w-none text-gray-700">
-                {assessment.instructions}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Instructions Panel */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+                {assessment?.instructions && (
+                  <div className="mb-8">
+                    <div className="flex items-center mb-6">
+                      <div className="w-8 h-8 bg-blue-100 rounded-xl mr-3 flex items-center justify-center">
+                        <DocumentTextIcon className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        Instructions
+                      </h2>
+                    </div>
+                    <div className="prose max-w-none text-gray-700 leading-relaxed">
+                      {assessment.instructions}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assessment Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                  <div className="group bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200/50 hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center mb-3">
+                      <div className="w-10 h-10 bg-blue-200 rounded-xl mr-3 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <ClockIcon className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h3 className="font-bold text-blue-900">Time Limit</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-800 mb-1">
+                      {assessment?.time_limit
+                        ? `${assessment.time_limit} min`
+                        : "Unlimited"}
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      {assessment?.time_limit
+                        ? "Complete within time limit"
+                        : "Take your time"}
+                    </p>
+                  </div>
+
+                  <div className="group bg-gradient-to-br from-emerald-50 to-green-100 p-6 rounded-2xl border border-emerald-200/50 hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center mb-3">
+                      <div className="w-10 h-10 bg-emerald-200 rounded-xl mr-3 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <QuestionMarkCircleIcon className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="font-bold text-emerald-900">Questions</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-800 mb-1">
+                      {assessment?.questions_count || 0}
+                    </p>
+                    <p className="text-sm text-emerald-600">
+                      Total questions to answer
+                    </p>
+                  </div>
+
+                  <div className="group bg-gradient-to-br from-amber-50 to-yellow-100 p-6 rounded-2xl border border-amber-200/50 hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center mb-3">
+                      <div className="w-10 h-10 bg-amber-200 rounded-xl mr-3 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <TrophyIcon className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <h3 className="font-bold text-amber-900">
+                        Passing Score
+                      </h3>
+                    </div>
+                    <p className="text-2xl font-bold text-amber-800 mb-1">
+                      {assessment?.passing_score}%
+                    </p>
+                    <p className="text-sm text-amber-600">
+                      Minimum score to pass
+                    </p>
+                  </div>
+
+                  <div className="group bg-gradient-to-br from-purple-50 to-violet-100 p-6 rounded-2xl border border-purple-200/50 hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center mb-3">
+                      <div className="w-10 h-10 bg-purple-200 rounded-xl mr-3 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <UsersIcon className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <h3 className="font-bold text-purple-900">Attempts</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-800 mb-1">
+                      {assessment?.max_attempts}
+                    </p>
+                    <p className="text-sm text-purple-600">
+                      Maximum attempts allowed
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">Time Limit</h3>
-              <p className="text-blue-800">
-                {assessment?.time_limit ? `${assessment.time_limit} minutes` : 'No time limit'}
-              </p>
-            </div>
+            {/* Security & Actions Panel */}
+            <div className="lg:col-span-1">
+              {/* Security Requirements */}
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 mb-6">
+                <div className="flex items-center mb-6">
+                  <div className="w-8 h-8 bg-red-100 rounded-xl mr-3 flex items-center justify-center">
+                    <ShieldCheckIcon className="w-5 h-5 text-red-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Security Notice
+                  </h2>
+                </div>
+                <div className="space-y-4 text-sm">
+                  <div className="flex items-start">
+                    <div className="w-2 h-2 bg-red-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">
+                        Activity Monitoring
+                      </p>
+                      <p className="text-gray-600">
+                        Your actions are tracked during the assessment
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">
+                        Tab Switching
+                      </p>
+                      <p className="text-gray-600">
+                        Switching tabs will be recorded as suspicious
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">
+                        Auto-Save
+                      </p>
+                      <p className="text-gray-600">
+                        Answers are saved automatically
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">
+                        Page Refresh
+                      </p>
+                      <p className="text-gray-600">
+                        Progress will be restored if refreshed
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-green-900 mb-2">Questions</h3>
-              <p className="text-green-800">{assessment?.questions_count || 0} questions</p>
-            </div>
+              {/* Action Buttons */}
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+                <h3 className="font-bold text-gray-900 mb-4">
+                  Ready to start?
+                </h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={enterFullscreen}
+                    className="w-full flex items-center justify-center px-4 py-3 border-2 border-blue-200 text-blue-700 rounded-xl hover:bg-blue-50 transition-all duration-200 font-medium"
+                  >
+                    <EyeIcon className="w-4 h-4 mr-2" />
+                    Enter Fullscreen
+                  </button>
 
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-yellow-900 mb-2">
-                Passing Score
-              </h3>
-              <p className="text-yellow-800">{assessment?.passing_score}%</p>
-            </div>
+                  <button
+                    onClick={() => {
+                      startTimeRef.current = new Date();
+                      securityLogger.logAssessmentStarted();
+                      startNewAssessment();
+                    }}
+                    className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-bold text-lg shadow-lg shadow-green-500/25"
+                  >
+                    <PlayIcon className="w-5 h-5 mr-2" />
+                    Start Assessment
+                  </button>
 
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-purple-900 mb-2">Max Attempts</h3>
-              <p className="text-purple-800">
-                {assessment?.max_attempts} attempts allowed
-              </p>
-            </div>
-          </div>
-
-          {/* Security Requirements */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-            <h2 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
-              <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
-              Security & Monitoring Notice
-            </h2>
-            <div className="space-y-3 text-sm text-red-800">
-              <p>
-                • <strong>Full monitoring:</strong> Your activity is being
-                tracked during this assessment
-              </p>
-              <p>
-                • <strong>Tab switching:</strong> Switching tabs or windows will
-                be recorded as suspicious activity
-              </p>
-              <p>
-                • <strong>Right-click disabled:</strong> Context menu is
-                disabled to prevent copying
-              </p>
-              <p>
-                • <strong>Shortcut blocking:</strong> Developer tools and
-                refresh shortcuts are disabled
-              </p>
-              <p>
-                • <strong>Auto-save:</strong> Your answers are automatically
-                saved every 500ms
-              </p>
-              <p>
-                • <strong>Page refresh:</strong> You can safely refresh - your
-                progress will be restored
-              </p>
-              <p className="font-semibold mt-4">
-                ⚠️ Excessive suspicious activity may result in assessment
-                invalidation
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={enterFullscreen}
-                className="px-4 py-3 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50"
-              >
-                Enter Fullscreen
-              </button>
-
-              <button
-                onClick={() => {
-                  startTimeRef.current = new Date();
-                  // Log assessment start using security service
-                  securityLogger.logAssessmentStarted();
-                  startNewAssessment();
-                }}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Start Assessment
-              </button>
+                  <button
+                    onClick={() => router.back()}
+                    className="w-full px-4 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -861,60 +1090,78 @@ export default function AssessmentTaking({
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
+      {/* Enhanced Header */}
+      <div className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-white/20 rounded-lg">
+        <div className="max-w-6xl mx-auto px-6 py-3">
           {/* Security Warnings */}
           {(tabSwitchCount > 0 || !windowFocused) && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center text-sm text-red-800">
-                <ExclamationTriangleIcon className="w-4 h-4 mr-2" />
-                <span>
-                  ⚠️ Security Notice: Tab switches detected ({tabSwitchCount}).
-                  {!windowFocused && " Window focus lost."} This activity is
-                  being monitored.
-                </span>
+            <div className="mb-3 p-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg">
+              <div className="flex items-center text-sm">
+                <div className="w-6 h-6 bg-red-100 rounded-lg mr-2 flex items-center justify-center">
+                  <ExclamationTriangleIcon className="w-4 h-4 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-red-900">
+                    Security Alert: {tabSwitchCount} tab switches
+                    {!windowFocused && ", focus lost"}
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-gray-900">
-                {assessment?.title}
-              </h1>
-              <span className="text-sm text-gray-500">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </span>
+          {/* Header Content */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3 ">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <AcademicCapIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">
+                  {assessment?.title}
+                </h1>
+                <p className="text-xs text-gray-600">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center text-sm text-gray-600">
-                <span>
-                  Answered: {answeredCount}/{questions.length}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-gray-600">
+                  {answeredCount}/{questions.length} answered
                 </span>
               </div>
 
               <div
-                className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                className={`flex items-center px-3 py-1.5 rounded-lg font-medium text-xs ${
                   timeRemaining < 300
-                    ? "bg-red-100 text-red-800"
+                    ? "bg-gradient-to-r from-red-100 to-red-200 text-red-800 border border-red-300"
                     : timeRemaining < 900
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-green-100 text-green-800"
+                    ? "bg-gradient-to-r from-amber-100 to-yellow-200 text-amber-800 border border-amber-300"
+                    : "bg-gradient-to-r from-emerald-100 to-green-200 text-emerald-800 border border-emerald-300"
                 }`}
               >
-                <ClockIcon className="w-4 h-4 mr-1" />
+                <ClockIcon className="w-3 h-3 mr-1" />
                 {formatTimeRemaining(timeRemaining)}
               </div>
             </div>
           </div>
 
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 rounded-full h-2">
+          {/* Progress Bar */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-gray-600">
+                Progress
+              </span>
+              <span className="text-xs font-bold text-blue-600">
+                {Math.round(progress)}%
+              </span>
+            </div>
+            <div className="relative w-full bg-gray-200 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -922,48 +1169,63 @@ export default function AssessmentTaking({
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6 flex gap-6">
+      <div className="max-w-6xl mx-auto p-4 flex gap-6">
         {/* Main Content */}
         <div className="flex-1">
-          <div className="bg-white rounded-xl shadow-sm p-8">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-4 mb-3">
             {renderQuestionContent(currentQuestion)}
+          </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t">
+          {/* Navigation */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-3">
+            <div className="flex items-center justify-between">
               <button
                 onClick={handlePreviousQuestion}
                 disabled={currentQuestionIndex === 0}
-                className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`group flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  currentQuestionIndex === 0
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 hover:shadow-lg"
+                }`}
               >
-                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                <ArrowLeftIcon className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
                 Previous
               </button>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 {restoringAnswers && (
-                  <span className="text-sm text-blue-500">
-                    Restoring answers...
-                  </span>
+                  <div className="flex items-center px-3 py-1 bg-blue-50 rounded-lg">
+                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                    <span className="text-xs font-medium text-blue-700">
+                      Restoring...
+                    </span>
+                  </div>
                 )}
                 {saving && (
-                  <span className="text-sm text-gray-500">Saving...</span>
+                  <div className="flex items-center px-3 py-1 bg-green-50 rounded-lg">
+                    <div className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                    <span className="text-xs font-medium text-green-700">
+                      Saving...
+                    </span>
+                  </div>
                 )}
               </div>
 
               {currentQuestionIndex === questions.length - 1 ? (
                 <button
                   onClick={() => setShowConfirmSubmit(true)}
-                  className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="group flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-lg hover:from-green-700 hover:to-emerald-800 transition-all duration-200 text-sm font-bold shadow-lg shadow-green-500/25"
                 >
-                  Submit Assessment
+                  <StopIcon className="w-4 h-4 mr-2" />
+                  Submit
                 </button>
               ) : (
                 <button
                   onClick={handleNextQuestion}
-                  className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="group flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 text-sm font-medium shadow-lg shadow-blue-500/25"
                 >
                   Next
-                  <ArrowRightIcon className="w-4 h-4 ml-2" />
+                  <ArrowRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
                 </button>
               )}
             </div>
@@ -971,13 +1233,16 @@ export default function AssessmentTaking({
         </div>
 
         {/* Sidebar - Question Navigator */}
-        <div className="w-80">
-          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Question Navigator
-            </h3>
+        <div className="w-64">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-3">
+            <div className="flex items-center mb-3">
+              <div className="w-5 h-5 bg-indigo-100 rounded-lg mr-2 flex items-center justify-center">
+                <BookOpenIcon className="w-3 h-3 text-indigo-600" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900">Navigator</h3>
+            </div>
 
-            <div className="grid grid-cols-5 gap-2 mb-6">
+            <div className="grid grid-cols-7 gap-1 mb-3">
               {questions.map((_, index) => {
                 const question = questions[index];
                 const questionId = question.id;
@@ -989,70 +1254,160 @@ export default function AssessmentTaking({
                   <button
                     key={index}
                     onClick={() => handleQuestionJump(index)}
-                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-all relative ${
+                    className={`group relative w-6 h-6 rounded text-xs font-bold transition-all duration-200 ${
                       isCurrent
-                        ? "bg-blue-600 text-white"
+                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md scale-105"
                         : isAnswered
-                        ? "bg-green-100 text-green-800 hover:bg-green-200"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        ? "bg-gradient-to-br from-green-100 to-emerald-200 text-green-800 hover:from-green-200 hover:to-emerald-300"
+                        : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 hover:from-gray-200 hover:to-gray-300"
                     }`}
                   >
                     {index + 1}
                     {isFlagged && (
-                      <FlagIcon className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1" />
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-400 rounded-full flex items-center justify-center">
+                        <FlagIconSolid className="w-1 h-1 text-white" />
+                      </div>
+                    )}
+                    {isAnswered && !isCurrent && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full flex items-center justify-center">
+                        <CheckCircleIcon className="w-1 h-1 text-white" />
+                      </div>
                     )}
                   </button>
                 );
               })}
             </div>
 
-            <div className="text-sm text-gray-600 space-y-2">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-100 rounded mr-2"></div>
-                <span>Answered</span>
+            {/* Legend */}
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center justify-between p-1.5 bg-green-50 rounded">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gradient-to-br from-green-100 to-emerald-200 rounded mr-1.5 flex items-center justify-center">
+                    <CheckCircleIcon className="w-2 h-2 text-green-600" />
+                  </div>
+                  <span className="font-medium text-green-800">Answered</span>
+                </div>
+                <span className="text-green-700 font-bold text-xs">
+                  {answeredCount}
+                </span>
               </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
-                <span>Not answered</span>
+
+              <div className="flex items-center justify-between p-1.5 bg-gray-50 rounded">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded mr-1.5 flex items-center justify-center">
+                    <QuestionMarkCircleIcon className="w-2 h-2 text-gray-600" />
+                  </div>
+                  <span className="font-medium text-gray-700">Remaining</span>
+                </div>
+                <span className="text-gray-600 font-bold text-xs">
+                  {questions.length - answeredCount}
+                </span>
               </div>
-              <div className="flex items-center">
-                <FlagIcon className="w-4 h-4 text-yellow-500 mr-2" />
-                <span>Flagged</span>
+
+              <div className="flex items-center justify-between p-1.5 bg-amber-50 rounded">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-amber-200 rounded mr-1.5 flex items-center justify-center">
+                    <FlagIconSolid className="w-2 h-2 text-amber-600" />
+                  </div>
+                  <span className="font-medium text-amber-800">Flagged</span>
+                </div>
+                <span className="text-amber-700 font-bold text-xs">
+                  {flaggedQuestions.size}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Submit Confirmation Modal */}
+      {/* Enhanced Submit Confirmation Modal */}
       {showConfirmSubmit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Submit Assessment
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Are you sure you want to submit your assessment? You have answered{" "}
-              {answeredCount} out of {questions.length} questions.
-            </p>
-            <p className="text-sm text-gray-500 mb-6">
-              Once submitted, you cannot make any changes to your answers.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowConfirmSubmit(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                disabled={submitting}
-              >
-                Review Again
-              </button>
-              <button
-                onClick={handleSubmitAssessment}
-                disabled={submitting}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                {submitting ? "Submitting..." : "Submit"}
-              </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <CheckCircleIcon className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Submit Assessment
+              </h3>
+              <p className="text-green-100">Ready to submit your answers?</p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Progress Summary */}
+              <div className="bg-gray-50 rounded-2xl p-4 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-600">
+                    Progress Summary
+                  </span>
+                  <span className="text-sm font-bold text-green-600">
+                    {answeredCount}/{questions.length} answered
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 h-3 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${(answeredCount / questions.length) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="text-center mb-6">
+                <p className="text-gray-700 mb-3">
+                  You have answered{" "}
+                  <span className="font-bold text-gray-900">
+                    {answeredCount}
+                  </span>{" "}
+                  out of{" "}
+                  <span className="font-bold text-gray-900">
+                    {questions.length}
+                  </span>{" "}
+                  questions.
+                </p>
+                {flaggedQuestions.size > 0 && (
+                  <p className="text-amber-600 text-sm">
+                    <FlagIconSolid className="w-4 h-4 inline mr-1" />
+                    {flaggedQuestions.size} question(s) flagged for review
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-red-800 text-center font-medium">
+                  ⚠️ Once submitted, you cannot make any changes to your
+                  answers.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmSubmit(false)}
+                  className="flex-1 px-6 py-3 border-2 border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 font-medium"
+                  disabled={submitting}
+                >
+                  Review Again
+                </button>
+                <button
+                  onClick={handleSubmitAssessment}
+                  disabled={submitting}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl hover:from-green-700 hover:to-emerald-800 transition-all duration-200 font-bold shadow-lg shadow-green-500/25 disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Submitting...
+                    </div>
+                  ) : (
+                    "Submit Assessment"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
