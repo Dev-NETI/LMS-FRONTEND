@@ -206,7 +206,7 @@ export default function NotificationBell() {
               size="sm"
               onClick={() => {
                 setIsOpen(false);
-                router.push("/trainee/notifications");
+                router.push("/notifications");
               }}
               className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
             >

@@ -173,7 +173,6 @@ export const startAssessment = async (assessmentId: number): Promise<StartAssess
         return {
           success: true,
           attempt: questionsResponse.data.data.attempt,
-          assessment: questionsResponse.data.data.assessment,
           questions: questionsResponse.data.data.questions,
           time_limit: questionsResponse.data.data.assessment.time_limit
         };
@@ -245,20 +244,6 @@ export const getAssessmentResult = async (attemptId: number): Promise<{
     return response.data;
   } catch (error) {
     console.error('Error fetching assessment result:', error);
-    throw error;
-  }
-};
-
-// Get trainee assessment statistics
-export const getAssessmentStats = async (): Promise<{
-  success: boolean;
-  data: AssessmentStats;
-}> => {
-  try {
-    const response = await api.get('/api/trainee/assessments/stats');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching assessment stats:', error);
     throw error;
   }
 };

@@ -3,29 +3,21 @@
 import React, { useState, useEffect } from "react";
 import {
   Assessment,
-  AssessmentAttempt,
   getTraineeAssessments,
   getScheduleAssessments,
-  getAssessmentStats,
   AssessmentStats,
   formatTimeLimit,
-  getStatusColor,
-  getStatusText,
   getScoreBadgeColor,
 } from "@/src/services/assessmentService";
 import {
   ClockIcon,
   AcademicCapIcon,
-  CheckCircleIcon,
   ExclamationTriangleIcon,
   PlayIcon,
   EyeIcon,
   ChartBarIcon,
   BookOpenIcon,
   TrophyIcon,
-  ArrowRightIcon,
-  FunnelIcon,
-  CalendarDaysIcon,
   DocumentTextIcon,
   SparklesIcon,
   FireIcon,
@@ -62,18 +54,13 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
         ? getScheduleAssessments(scheduleId)
         : getTraineeAssessments();
 
-      const [assessmentsResponse, statsResponse] = await Promise.all([
-        assessmentsPromise,
-        getAssessmentStats(),
-      ]);
+      const [assessmentsResponse] = await Promise.all([assessmentsPromise]);
 
       if (assessmentsResponse.success) {
         setAssessments(assessmentsResponse.data);
       }
 
-      if (statsResponse.success) {
-        setStats(statsResponse.data);
-      }
+      console.log(assessments);
     } catch (err: any) {
       setError(err.message || "Failed to load assessments");
       console.error("Error fetching assessments:", err);
@@ -109,7 +96,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
           (attempt) => attempt.status === "submitted"
         );
       }
-      return true; // 'all'
+      return true; // 'all' d
     });
 
     // Sort assessments
@@ -179,109 +166,6 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          <div className="group bg-gradient-to-br from-blue-50 via-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200/50 hover:shadow-lg hover:scale-[1.02]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-blue-600 mb-3 flex items-center">
-                  <BookOpenIcon className="w-4 h-4 mr-2" />
-                  Total Assessments
-                </p>
-                <p className="text-3xl font-bold text-blue-700 mb-1">
-                  {stats.total_assessments}
-                </p>
-                <p className="text-xs text-blue-600/70">Available to take</p>
-              </div>
-              <div className="p-4 bg-gradient-to-br from-blue-200 to-blue-300 rounded-2xl group-hover:from-blue-300 group-hover:to-blue-400">
-                <BookOpenIcon className="w-7 h-7 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 rounded-2xl p-6 border border-emerald-200/50 hover:shadow-lg hover:scale-[1.02]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-emerald-600 mb-3 flex items-center">
-                  <CheckCircleIconSolid className="w-4 h-4 mr-2" />
-                  Completed
-                </p>
-                <p className="text-3xl font-bold text-emerald-700 mb-1">
-                  {stats.completed_assessments}
-                </p>
-                <p className="text-xs text-emerald-600/70">
-                  {stats.total_assessments > 0
-                    ? Math.round(
-                        (stats.completed_assessments /
-                          stats.total_assessments) *
-                          100
-                      )
-                    : 0}
-                  % completion rate
-                </p>
-              </div>
-              <div className="p-4 bg-gradient-to-br from-emerald-200 to-emerald-300 rounded-2xl group-hover:from-emerald-300 group-hover:to-emerald-400">
-                <CheckCircleIconSolid className="w-7 h-7 text-emerald-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 rounded-2xl p-6 border border-amber-200/50 hover:shadow-lg hover:scale-[1.02]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-amber-600 mb-3 flex items-center">
-                  <TrophyIcon className="w-4 h-4 mr-2" />
-                  Passed
-                </p>
-                <p className="text-3xl font-bold text-amber-700 mb-1">
-                  {stats.passed_assessments}
-                </p>
-                <p className="text-xs text-amber-600/70">
-                  {stats.completed_assessments > 0
-                    ? Math.round(
-                        (stats.passed_assessments /
-                          stats.completed_assessments) *
-                          100
-                      )
-                    : 0}
-                  % pass rate
-                </p>
-              </div>
-              <div className="p-4 bg-gradient-to-br from-amber-200 to-orange-300 rounded-2xl group-hover:from-amber-300 group-hover:to-orange-400">
-                <TrophyIcon className="w-7 h-7 text-amber-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-100 rounded-2xl p-6 border border-violet-200/50 hover:shadow-lg hover:scale-[1.02]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-violet-600 mb-3 flex items-center">
-                  <ChartBarIcon className="w-4 h-4 mr-2" />
-                  Average Score
-                </p>
-                <p className="text-3xl font-bold text-violet-700 mb-1">
-                  {stats.average_score}%
-                </p>
-                <p className="text-xs text-violet-600/70">
-                  {stats.average_score >= 80
-                    ? "Excellent"
-                    : stats.average_score >= 70
-                    ? "Good"
-                    : stats.average_score >= 60
-                    ? "Fair"
-                    : "Needs improvement"}
-                </p>
-              </div>
-              <div className="p-4 bg-gradient-to-br from-violet-200 to-indigo-300 rounded-2xl group-hover:from-violet-300 group-hover:to-indigo-400">
-                <ChartBarIcon className="w-7 h-7 text-violet-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header and Filters */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -684,7 +568,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                             Attempts
                           </div>
                           <span className="font-semibold text-gray-900">
-                            {assessment.attempts?.length || 0}/
+                            {assessment.attempts_count || 0}/
                             {assessment.max_attempts}
                           </span>
                         </div>

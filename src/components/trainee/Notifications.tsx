@@ -37,7 +37,10 @@ export default function Notifications() {
     setIsLoading(true);
     try {
       await authService.initCSRF();
-      const response: NotificationResponse = await getTraineeNotifications(20, showUnreadOnly);
+      const response: NotificationResponse = await getTraineeNotifications(
+        20,
+        showUnreadOnly
+      );
       setNotifications(response.notifications || []);
       setUnreadCount(response.unread_count || 0);
     } catch (error) {
@@ -53,13 +56,13 @@ export default function Notifications() {
     try {
       await authService.initCSRF();
       await markNotificationAsRead(notification.id);
-      
-      setNotifications(prev =>
-        prev.map(n =>
+
+      setNotifications((prev) =>
+        prev.map((n) =>
           n.id === notification.id ? { ...n, is_read: true } : n
         )
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
     }
@@ -68,13 +71,15 @@ export default function Notifications() {
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read first
     await handleMarkAsRead(notification);
-    
+
     // Navigate to course overview if schedule_id is available
     if (notification.schedule_id) {
       router.push(`/courses/${notification.schedule_id}/overview/`);
     } else if (notification.announcement?.schedule_id) {
       // Fallback to announcement's schedule_id
-      router.push(`/courses/${notification.announcement.schedule_id}/overview/`);
+      router.push(
+        `/courses/${notification.announcement.schedule_id}/overview/`
+      );
     }
   };
 
@@ -85,10 +90,8 @@ export default function Notifications() {
     try {
       await authService.initCSRF();
       await markAllNotificationsAsRead();
-      
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, is_read: true }))
-      );
+
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error);
@@ -103,12 +106,14 @@ export default function Notifications() {
     try {
       await authService.initCSRF();
       await deleteNotification(notificationId);
-      
-      const deletedNotification = notifications.find(n => n.id === notificationId);
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      
+
+      const deletedNotification = notifications.find(
+        (n) => n.id === notificationId
+      );
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+
       if (deletedNotification && !deletedNotification.is_read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
       console.error("Failed to delete notification:", error);
@@ -142,7 +147,10 @@ export default function Notifications() {
         </div>
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-4">
+            <div
+              key={index}
+              className="bg-white rounded-lg border border-gray-200 p-4"
+            >
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 bg-gray-300 rounded-full animate-pulse"></div>
                 <div className="flex-1 space-y-2">
@@ -184,7 +192,7 @@ export default function Notifications() {
             </p>
           </div>
         </div>
-        
+
         {unreadCount > 0 && (
           <Button
             onClick={handleMarkAllAsRead}
@@ -242,20 +250,32 @@ export default function Notifications() {
             <div
               key={notification.id}
               className={`bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:shadow-md cursor-pointer ${
-                !notification.is_read ? "border-l-4 border-l-blue-500 bg-blue-50/30" : ""
+                !notification.is_read
+                  ? "border-l-4 border-l-blue-500 bg-blue-50/30"
+                  : ""
               }`}
               onClick={() => handleNotificationClick(notification)}
             >
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
-                  <div className={`p-2 rounded-full ${!notification.is_read ? "bg-blue-100" : "bg-gray-100"}`}>
+                  <div
+                    className={`p-2 rounded-full ${
+                      !notification.is_read ? "bg-blue-100" : "bg-gray-100"
+                    }`}
+                  >
                     {getNotificationIcon(notification.type)}
                   </div>
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className={`text-sm font-medium ${!notification.is_read ? "text-gray-900" : "text-gray-700"}`}>
+                    <h3
+                      className={`text-sm font-medium ${
+                        !notification.is_read
+                          ? "text-gray-900"
+                          : "text-gray-700"
+                      }`}
+                    >
                       {notification.title}
                     </h3>
                     <div className="flex items-center space-x-2">
@@ -284,27 +304,47 @@ export default function Notifications() {
                     </div>
                   </div>
 
-                  <p className={`text-sm mb-3 ${!notification.is_read ? "text-gray-700" : "text-gray-600"}`}>
+                  <p
+                    className={`text-sm mb-3 ${
+                      !notification.is_read ? "text-gray-700" : "text-gray-600"
+                    }`}
+                  >
                     {notification.message}
                   </p>
 
                   {notification.announcement && (
                     <div className="bg-gray-50 rounded-md p-3 mb-3">
-                      <p className="text-xs font-medium text-gray-700 mb-1">Related Announcement:</p>
-                      <p className="text-sm text-gray-600">{notification.announcement.title}</p>
+                      <p className="text-xs font-medium text-gray-700 mb-1">
+                        Related Announcement:
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {notification.announcement.title}
+                      </p>
                       {notification.announcement.schedule?.course_name && (
                         <p className="text-xs text-gray-500 mt-1">
-                          Course: {notification.announcement.schedule.course_name}
+                          Course:{" "}
+                          {notification.announcement.schedule.course_name}
                         </p>
                       )}
                     </div>
                   )}
 
-                  {(notification.schedule_id || notification.announcement?.schedule_id) && (
+                  {(notification.schedule_id ||
+                    notification.announcement?.schedule_id) && (
                     <div className="bg-blue-50 rounded-md p-2 mb-3 border border-blue-200">
                       <p className="text-xs text-blue-700 font-medium flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        <svg
+                          className="w-3 h-3 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
                         </svg>
                         Click to view course overview
                       </p>
