@@ -14,6 +14,7 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -72,12 +73,14 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-black/10"></div>
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v22H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z'/%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        ></div>
+        <div className="absolute inset-0">
+          <Image
+            src="/LMS.svg"
+            alt="Login Background"
+            className="w-full h-full object-cover"
+            fill
+          />
+        </div>
       </div>
 
       {/* Right Side - Login Form */}
@@ -89,9 +92,8 @@ export default function LoginPage() {
               <ShieldCheckIcon className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-              Admin Login
+              Administrator Login
             </h1>
-            <p className="text-gray-600 text-sm">Management dashboard access</p>
           </div>
 
           {/* Login Form */}
