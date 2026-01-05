@@ -182,7 +182,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          <div className="group bg-gradient-to-br from-blue-50 via-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+          <div className="group bg-gradient-to-br from-blue-50 via-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200/50 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-blue-600 mb-3 flex items-center">
@@ -194,13 +194,13 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                 </p>
                 <p className="text-xs text-blue-600/70">Available to take</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-blue-200 to-blue-300 rounded-2xl group-hover:from-blue-300 group-hover:to-blue-400 transition-all duration-300">
+              <div className="p-4 bg-gradient-to-br from-blue-200 to-blue-300 rounded-2xl group-hover:from-blue-300 group-hover:to-blue-400">
                 <BookOpenIcon className="w-7 h-7 text-blue-600" />
               </div>
             </div>
           </div>
 
-          <div className="group bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 rounded-2xl p-6 border border-emerald-200/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+          <div className="group bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 rounded-2xl p-6 border border-emerald-200/50 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-emerald-600 mb-3 flex items-center">
@@ -221,13 +221,13 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                   % completion rate
                 </p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-emerald-200 to-emerald-300 rounded-2xl group-hover:from-emerald-300 group-hover:to-emerald-400 transition-all duration-300">
+              <div className="p-4 bg-gradient-to-br from-emerald-200 to-emerald-300 rounded-2xl group-hover:from-emerald-300 group-hover:to-emerald-400">
                 <CheckCircleIconSolid className="w-7 h-7 text-emerald-600" />
               </div>
             </div>
           </div>
 
-          <div className="group bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 rounded-2xl p-6 border border-amber-200/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+          <div className="group bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 rounded-2xl p-6 border border-amber-200/50 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-amber-600 mb-3 flex items-center">
@@ -248,13 +248,13 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                   % pass rate
                 </p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-amber-200 to-orange-300 rounded-2xl group-hover:from-amber-300 group-hover:to-orange-400 transition-all duration-300">
+              <div className="p-4 bg-gradient-to-br from-amber-200 to-orange-300 rounded-2xl group-hover:from-amber-300 group-hover:to-orange-400">
                 <TrophyIcon className="w-7 h-7 text-amber-600" />
               </div>
             </div>
           </div>
 
-          <div className="group bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-100 rounded-2xl p-6 border border-violet-200/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+          <div className="group bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-100 rounded-2xl p-6 border border-violet-200/50 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-violet-600 mb-3 flex items-center">
@@ -274,7 +274,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                     : "Needs improvement"}
                 </p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-violet-200 to-indigo-300 rounded-2xl group-hover:from-violet-300 group-hover:to-indigo-400 transition-all duration-300">
+              <div className="p-4 bg-gradient-to-br from-violet-200 to-indigo-300 rounded-2xl group-hover:from-violet-300 group-hover:to-indigo-400">
                 <ChartBarIcon className="w-7 h-7 text-violet-600" />
               </div>
             </div>
@@ -444,7 +444,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
             return (
               <div
                 key={assessment.id}
-                className={`group bg-white rounded-2xl border border-gray-100 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:scale-[1.01] ${
+                className={`group bg-white rounded-2xl border border-gray-100 hover:shadow-xl hover:shadow-blue-500/10 hover:scale-[1.01] ${
                   isGridView ? "p-6" : "p-6"
                 }`}
               >

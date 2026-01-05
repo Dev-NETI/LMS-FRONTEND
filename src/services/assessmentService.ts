@@ -286,6 +286,24 @@ export const resumeAssessment = async (attemptId: number, assessmentId: number):
   }
 };
 
+// Update time remaining for assessment attempt
+export const updateTimeRemaining = async (assessmentId: number, timeRemaining?: number): Promise<{
+  success: boolean;
+  data: {
+    time_remaining: number;
+    status: string;
+  };
+}> => {
+  try {
+    const payload = timeRemaining !== undefined ? { time_remaining: timeRemaining } : {};
+    const response = await api.post(`/api/trainee/assessments/${assessmentId}/update-time`, payload);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating time remaining:', error);
+    throw error;
+  }
+};
+
 // Get assessment history
 export const getAssessmentHistory = async (assessmentId?: number): Promise<{
   success: boolean;

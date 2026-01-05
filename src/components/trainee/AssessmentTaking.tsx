@@ -10,6 +10,7 @@ import {
   resumeAssessment,
   saveAnswer,
   submitAssessment,
+  updateTimeRemaining,
   formatTimeRemaining,
 } from "@/src/services/assessmentService";
 import { securityLogger } from "@/src/services/securityService";
@@ -27,8 +28,6 @@ import {
   EyeIcon,
   DocumentTextIcon,
   PlayIcon,
-  PauseIcon,
-  StopIcon,
   BookOpenIcon,
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -71,6 +70,7 @@ export default function AssessmentTaking({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const autoSaveRef = useRef<NodeJS.Timeout | null>(null);
+  const timeUpdateRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const answersRef = useRef<{ [questionId: number]: any }>({});
   const attemptRef = useRef<AssessmentAttempt | null>(null);
@@ -85,6 +85,7 @@ export default function AssessmentTaking({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+      if (timeUpdateRef.current) clearInterval(timeUpdateRef.current);
     };
   }, [assessmentId, attemptId]);
 
@@ -115,6 +116,46 @@ export default function AssessmentTaking({
       };
     }
   }, [timeRemaining, showInstructions]);
+
+  // Time remaining database update effect - runs every 30 seconds
+  useEffect(() => {
+    if (!showInstructions && attempt && timeRemaining > 0) {
+      // Update time remaining in database every 30 seconds and sync with server
+      const updateTimeRemainingInDB = async () => {
+        try {
+          // Send current frontend time remaining to backend for synchronization
+          const response = await updateTimeRemaining(
+            assessmentId,
+            timeRemaining
+          );
+          if (response.success) {
+            // Backend confirms the time - we can optionally sync back if needed
+            const serverTimeRemaining = response.data.time_remaining;
+            // Only sync back if there's a significant discrepancy (more than 10 seconds)
+            if (Math.abs(timeRemaining - serverTimeRemaining) > 10) {
+              console.log(
+                `Time sync: frontend=${timeRemaining}s, backend=${serverTimeRemaining}s`
+              );
+              setTimeRemaining(serverTimeRemaining);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to update time remaining in database:", error);
+          // Continue silently - this is a backup mechanism
+        }
+      };
+
+      // Initial update
+      updateTimeRemainingInDB();
+
+      // Set up periodic updates every 30 seconds
+      timeUpdateRef.current = setInterval(updateTimeRemainingInDB, 30000);
+
+      return () => {
+        if (timeUpdateRef.current) clearInterval(timeUpdateRef.current);
+      };
+    }
+  }, [assessmentId, attempt, timeRemaining, showInstructions]);
 
   // Anti-cheating monitoring effects
   useEffect(() => {
@@ -201,6 +242,7 @@ export default function AssessmentTaking({
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+      if (timeUpdateRef.current) clearInterval(timeUpdateRef.current);
 
       // Save answers on component unmount
       try {
@@ -249,10 +291,12 @@ export default function AssessmentTaking({
 
       if (response.success) {
         console.log("Assessment start response:", response);
-        setAssessment(response.assessment);
         setAttempt(response.attempt);
         setQuestions(response.questions);
-        setTimeRemaining(response.time_limit * 60); // Convert minutes to seconds
+        // Use actual time remaining from attempt, not full time limit
+        const actualTimeRemaining =
+          response.attempt.time_remaining ?? response.time_limit * 60;
+        setTimeRemaining(actualTimeRemaining);
 
         // Initialize answers from existing saved answers - handles page refresh
         const initialAnswers: { [questionId: number]: any } = {};
@@ -343,7 +387,9 @@ export default function AssessmentTaking({
         setAssessment(response.assessment);
         setAttempt(response.attempt);
         setQuestions(response.questions);
-        setTimeRemaining(response.attempt.time_remaining || 0);
+        // Use the actual time remaining from database, should never be 0 for active attempts
+        const actualTimeRemaining = response.attempt.time_remaining ?? 0;
+        setTimeRemaining(actualTimeRemaining);
         setShowInstructions(false);
 
         // Load existing answers - improved logic for page refresh
@@ -556,6 +602,14 @@ export default function AssessmentTaking({
 
       // Save all answers before submission to ensure nothing is lost
       await saveAllAnswersBeforeSubmit();
+
+      // Update time remaining one final time before submission
+      try {
+        await updateTimeRemaining(assessmentId);
+      } catch (error) {
+        console.error("Failed to update final time remaining:", error);
+        // Continue with submission even if this fails
+      }
 
       // Log assessment completion using security service
       await securityLogger.logAssessmentCompleted({
@@ -1216,7 +1270,6 @@ export default function AssessmentTaking({
                   onClick={() => setShowConfirmSubmit(true)}
                   className="group flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-lg hover:from-green-700 hover:to-emerald-800 transition-all duration-200 text-sm font-bold shadow-lg shadow-green-500/25"
                 >
-                  <StopIcon className="w-4 h-4 mr-2" />
                   Submit
                 </button>
               ) : (
