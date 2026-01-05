@@ -138,11 +138,19 @@ export default function CoursesPage() {
                             <strong>Training date:</strong>{" "}
                             {new Date(
                               enrolledCourse.schedule.startdateformat
-                            ).toLocaleDateString()}
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
                             {" to "}{" "}
                             {new Date(
                               enrolledCourse.schedule.enddateformat
-                            ).toLocaleDateString()}
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
                           </p>
                         </div>
 

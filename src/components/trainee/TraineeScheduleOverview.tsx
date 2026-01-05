@@ -153,12 +153,24 @@ export default function TraineeScheduleOverview({
                 <CalendarIcon className="w-5 h-5" />
                 <span className="text-sm">
                   {schedule.startdateformat &&
-                    new Date(
-                      schedule.startdateformat
-                    ).toLocaleDateString()}{" "}
+                    new Date(schedule.startdateformat).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      }
+                    )}{" "}
                   -{" "}
                   {schedule.enddateformat &&
-                    new Date(schedule.enddateformat).toLocaleDateString()}
+                    new Date(schedule.enddateformat).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      }
+                    )}
                 </span>
               </div>
             </div>
