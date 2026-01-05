@@ -2,12 +2,14 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Bars3Icon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightEndOnRectangleIcon,
+  Bars3Icon,
+} from "@heroicons/react/24/outline";
 import {
   ChevronDownIcon,
   UserIcon,
   Cog6ToothIcon,
-  ArrowRightOnRectangleIcon,
 } from "@heroicons/react/20/solid";
 import NotificationBell from "@/src/components/trainee/NotificationBell";
 
@@ -100,7 +102,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                       onClick={logout}
                       className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      <ArrowRightOnRectangleIcon className="w-4 h-4 mr-3 text-gray-400" />
+                      <ArrowRightEndOnRectangleIcon className="w-4 h-4 mr-3 text-gray-400" />
                       Sign out
                     </button>
                   </div>

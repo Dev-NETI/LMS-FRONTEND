@@ -26,7 +26,6 @@ const navigation = [
   { name: "My Course", href: "/courses", icon: BookOpenIcon },
   { name: "Assessment", href: "/assessments", icon: PencilIcon },
   { name: "Schedule", href: "/schedule", icon: CalendarIcon },
-  { name: "Progress", href: "/progress", icon: ChartBarIcon },
   { name: "Certificates", href: "/certificates", icon: AcademicCapIcon },
   { name: "Messages", href: "/messages", icon: ChatBubbleLeftRightIcon },
 ];
