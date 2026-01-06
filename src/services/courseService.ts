@@ -31,11 +31,22 @@ export interface AdminCourse {
   coursecode: string;
   coursename: string;
   coursedescription?: string;
-  coursetype?: string;
   courseformat?: string;
   coursecategory?: string;
   coursecreationdate: string;
   courseupdateddate: string;
+  coursetype: CourseType;
+  modeofdelivery: ModeOfDelivery;
+}
+
+export interface CourseType {
+  id: number;
+  coursetype: string;
+}
+
+export interface ModeOfDelivery {
+  id: number;
+  modeofdelivery: string;
 }
 
 export interface PaginationParams {

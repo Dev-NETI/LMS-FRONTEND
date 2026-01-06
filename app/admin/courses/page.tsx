@@ -23,66 +23,39 @@ import {
   BookOpenIcon,
 } from "@heroicons/react/24/outline";
 
-// Use AdminCourse interface from service
-type Course = AdminCourse & {
-  // Add computed properties for display
-  id: number;
-  title: string;
-  description: string;
-  thumbnail: string;
-};
-
-// Transform backend course data to frontend format
-const transformCourseData = (backendCourse: AdminCourse): Course => {
-  return {
-    ...backendCourse,
-    id: backendCourse.courseid,
-    title: backendCourse.coursename,
-    description: backendCourse.coursedescription || "No description available",
-    thumbnail: "/images/default-course.jpg",
-  };
-};
-
-// Map backend status to frontend status
-const mapCourseStatus = (
-  backendStatus: string
-): "Published" | "Draft" | "Archived" => {
-  const statusMap: { [key: string]: "Published" | "Draft" | "Archived" } = {
-    active: "Published",
-    published: "Published",
-    draft: "Draft",
-    inactive: "Archived",
-    archived: "Archived",
-  };
-
-  return statusMap[backendStatus.toLowerCase()] || "Draft";
-};
-
 export default function AdminCoursesPage() {
   const router = useRouter();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [categoryFilter, setCategoryFilter] = useState<string>("All");
-  const [levelFilter, setLevelFilter] = useState<string>("All");
+  const [isSearching, setIsSearching] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
 
-  // Debounce search query
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-      if (searchQuery !== debouncedSearchQuery) {
-        setCurrentPage(1); // Reset to first page when search changes
-      }
-    }, 500);
+  // Handle manual search
+  const handleSearch = () => {
+    setIsSearching(true);
+    setDebouncedSearchQuery(searchQuery);
+    setCurrentPage(1);
+  };
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, debouncedSearchQuery]);
+  // Handle Enter key press in search input
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setCurrentPage(1);
+  };
 
   // Fetch courses from API
   useEffect(() => {
@@ -102,8 +75,7 @@ export default function AdminCoursesPage() {
         console.log(response);
 
         if (response.success) {
-          const transformedCourses = response.data.map(transformCourseData);
-          setCourses(transformedCourses);
+          setCourses(response.data);
           setPagination(response.pagination);
         } else {
           setError(response.message || "Failed to fetch courses");
@@ -119,37 +91,12 @@ export default function AdminCoursesPage() {
         console.error("Error fetching courses:", err);
       } finally {
         setIsLoading(false);
+        setIsSearching(false);
       }
     };
 
     fetchCourses();
   }, [currentPage, itemsPerPage, debouncedSearchQuery]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Published":
-        return "bg-green-100 text-green-800";
-      case "Draft":
-        return "bg-yellow-100 text-yellow-800";
-      case "Archived":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "bg-blue-100 text-blue-800";
-      case "Intermediate":
-        return "bg-purple-100 text-purple-800";
-      case "Advanced":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   // Show loading state
   if (isLoading) {
@@ -265,15 +212,44 @@ export default function AdminCoursesPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               {/* Search */}
-              <div className="flex-1 relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search courses, instructors, or tags..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+              <div className="flex-1 flex gap-3">
+                <div className="flex-1 relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search courses, descriptions, and course types..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <Button
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isSearching ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Searching...
+                    </>
+                  ) : (
+                    <>
+                      <MagnifyingGlassIcon className="w-4 h-4" />
+                      Search
+                    </>
+                  )}
+                </Button>
+                {(searchQuery || debouncedSearchQuery) && (
+                  <Button
+                    onClick={clearSearch}
+                    variant="outline"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -294,12 +270,17 @@ export default function AdminCoursesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {courses.map((course) => (
               <div
-                key={course.id}
+                key={course.courseid}
                 className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600 relative">
                   <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
                     <BookOpenIcon className="w-16 h-16 text-white opacity-80" />
+                  </div>
+                  <div className="absolute top-4 right-4 bg-white bg-opacity-90 px-3 py-1 rounded-full">
+                    <span className="text-sm font-medium text-gray-800">
+                      {course?.coursecode}
+                    </span>
                   </div>
                 </div>
 
@@ -307,14 +288,16 @@ export default function AdminCoursesPage() {
                   <div className="flex items-start justify-between mb-3">
                     <h3
                       className="text-lg font-semibold text-gray-900 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
-                      onClick={() => router.push(`/admin/courses/${course.id}`)}
+                      onClick={() =>
+                        router.push(`/admin/courses/${course.courseid}`)
+                      }
                     >
-                      {course.title}
+                      {course.coursename}
                     </h3>
                     <div className="flex gap-2">
                       <button
                         onClick={() =>
-                          router.push(`/admin/courses/${course.id}`)
+                          router.push(`/admin/courses/${course.courseid}`)
                         }
                         className="p-1 text-gray-400 hover:text-blue-600"
                         title="View Details"
@@ -323,9 +306,17 @@ export default function AdminCoursesPage() {
                       </button>
                     </div>
                   </div>
-
+                  <p className="text-sm text-gray-600 line-clamp-3">
+                    Course Type: {""}
+                    {course?.coursetype.coursetype ||
+                      "No Course Type available"}
+                  </p>
+                  <p className="text-sm text-gray-600 line-clamp-3">
+                    {course?.modeofdelivery?.modeofdelivery ||
+                      "No description available"}
+                  </p>
                   <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                    {course.description}
+                    {course.coursedescription || "No description available"}
                   </p>
                 </div>
               </div>

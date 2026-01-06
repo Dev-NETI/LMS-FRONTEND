@@ -9,17 +9,9 @@ import {
   UsersIcon,
   BookOpenIcon,
   AcademicCapIcon,
-  DocumentTextIcon,
-  CogIcon,
-  BellIcon,
-  ClipboardDocumentListIcon,
   UserGroupIcon,
-  TrophyIcon,
-  ChartPieIcon,
   ExclamationTriangleIcon,
   BuildingOfficeIcon,
-  CalendarIcon,
-  DocumentDuplicateIcon,
 } from "@heroicons/react/24/outline";
 
 interface AdminSidebarProps {
@@ -32,12 +24,6 @@ const navigation = [
     name: "Dashboard",
     href: "/admin/dashboard",
     icon: ChartBarIcon,
-    current: false,
-  },
-  {
-    name: "Analytics",
-    href: "/admin/analytics",
-    icon: ChartPieIcon,
     current: false,
   },
 ];
@@ -74,24 +60,6 @@ const courseManagement = [
     name: "All Courses",
     href: "/admin/courses",
     icon: BookOpenIcon,
-    current: false,
-  },
-  {
-    name: "Course Categories",
-    href: "/admin/categories",
-    icon: ClipboardDocumentListIcon,
-    current: false,
-  },
-  {
-    name: "Assignments",
-    href: "/admin/assignments",
-    icon: DocumentTextIcon,
-    current: false,
-  },
-  {
-    name: "Certificates",
-    href: "/admin/certificates",
-    icon: TrophyIcon,
     current: false,
   },
 ];
@@ -198,7 +166,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               </div>
 
               {/* User Management */}
-              <div>
+              {/* <div>
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                   User Management
                 </h3>
@@ -227,7 +195,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     </Link>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Course Management */}
               <div>
