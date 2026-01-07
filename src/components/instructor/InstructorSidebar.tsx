@@ -23,7 +23,7 @@ interface InstructorSidebarProps {
 const navigation = [
   {
     name: "Dashboard",
-    href: "/admin/dashboard",
+    href: "/instructor/dashboard",
     icon: ChartBarIcon,
     current: false,
   },

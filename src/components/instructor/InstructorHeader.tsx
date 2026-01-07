@@ -70,7 +70,7 @@ export default function InstructorHeader({
                   {user?.name ||
                     `${user?.f_name || ""} ${user?.l_name || ""}`.trim()}
                 </p>
-                <p className="text-xs text-gray-400">Administrator</p>
+                <p className="text-xs text-gray-400">Instructor</p>
               </div>
               <div className="relative">
                 <button
