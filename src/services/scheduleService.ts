@@ -38,15 +38,38 @@ export interface EnrolledStudent {
   contact_num?: string;
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface CourseScheduleResponse {
   success: boolean;
   data: CourseSchedule[];
+  pagination?: PaginationMeta;
   message: string;
 }
 
-export const getCourseSchedule = async (id: number): Promise<CourseScheduleResponse> => {
+export interface ScheduleParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export const getCourseSchedule = async (id: number, params: ScheduleParams = {}): Promise<CourseScheduleResponse> => {
   try {
-    const response = await api.get(`/api/admin/courses-schedule/${id}`);
+    const queryParams = new URLSearchParams();
+    
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.search) queryParams.append('search', params.search);
+    
+    const url = `/api/admin/courses-schedule/${id}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     console.error('Error fetching course schedule:', error);

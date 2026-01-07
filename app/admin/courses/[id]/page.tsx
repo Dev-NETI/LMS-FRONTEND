@@ -12,10 +12,6 @@ import { Skeleton } from "@mui/material";
 import CourseSchedulePage from "@/src/components/admin/course/CourseSchedule";
 import CourseContentPage from "@/src/components/admin/course/CourseContent";
 import CourseTrainingMaterials from "@/src/components/admin/course/CourseTrainingMaterials";
-import {
-  CourseSchedule,
-  getCourseSchedule,
-} from "@/src/services/scheduleService";
 import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable";
 import QuestionBank from "@/src/components/admin/course/QuestionBank";
 import AssessmentManagement from "@/src/components/admin/course/AssessmentManagement";
@@ -25,12 +21,10 @@ export default function CourseDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [course, setCourse] = useState<AdminCourse | null>(null);
-  const [schedule, setSchedule] = useState<CourseSchedule[]>([]);
   const [activeTab, setActiveTab] = useState<
     "overview" | "content" | "schedule" | "materials" | "questions" | "assessments"
   >("overview");
   const [isLoading, setIsLoading] = useState(true);
-  const [isScheduleLoading, setIsScheduleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,19 +45,6 @@ export default function CourseDetailsPage() {
           toast.error(courseResponse.message || "Failed to fetch course");
         }
 
-        // Fetch course schedule
-        try {
-          setIsScheduleLoading(true);
-          const scheduleResponse = await getCourseSchedule(Number(params.id));
-          if (scheduleResponse.success) {
-            setSchedule(scheduleResponse.data);
-          }
-        } catch (scheduleError) {
-          console.warn("Failed to fetch course schedule:", scheduleError);
-          // Don't show error for schedule as it's optional
-        } finally {
-          setIsScheduleLoading(false);
-        }
       } catch (err) {
         const errorMessage =
           err instanceof Error
@@ -316,7 +297,7 @@ export default function CourseDetailsPage() {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Schedule ({schedule.length})
+                Schedule
               </button>
             </nav>
           </div>
@@ -332,102 +313,9 @@ export default function CourseDetailsPage() {
             <CourseTrainingMaterials courseId={course.courseid} />
           )}
 
-          {activeTab === "schedule" &&
-            (isScheduleLoading ? (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
-                  <Skeleton
-                    variant="text"
-                    width={192}
-                    height={24}
-                    sx={{ mb: 1 }}
-                  />
-                  <Skeleton variant="text" width={288} height={16} />
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <th key={index} className="px-6 py-3">
-                            <Skeleton variant="text" width={80} height={16} />
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {Array.from({ length: 5 }).map((_, rowIndex) => (
-                        <tr key={rowIndex}>
-                          {Array.from({ length: 6 }).map((_, colIndex) => (
-                            <td key={colIndex} className="px-6 py-4">
-                              {colIndex === 0 ? (
-                                <div className="flex items-center">
-                                  <Skeleton
-                                    variant="rounded"
-                                    width={32}
-                                    height={32}
-                                    sx={{ mr: 2 }}
-                                  />
-                                  <Skeleton
-                                    variant="text"
-                                    width={96}
-                                    height={16}
-                                  />
-                                </div>
-                              ) : colIndex === 4 ? (
-                                <div>
-                                  <div className="flex items-center mb-1">
-                                    <Skeleton
-                                      variant="circular"
-                                      width={16}
-                                      height={16}
-                                      sx={{ mr: 0.5 }}
-                                    />
-                                    <Skeleton
-                                      variant="text"
-                                      width={32}
-                                      height={16}
-                                    />
-                                    <Skeleton
-                                      variant="text"
-                                      width={32}
-                                      height={16}
-                                      sx={{ ml: 1 }}
-                                    />
-                                  </div>
-                                  <Skeleton
-                                    variant="text"
-                                    width={128}
-                                    height={12}
-                                  />
-                                </div>
-                              ) : (
-                                <div>
-                                  <Skeleton
-                                    variant="text"
-                                    width={80}
-                                    height={16}
-                                    sx={{ mb: 0.5 }}
-                                  />
-                                  <Skeleton
-                                    variant="text"
-                                    width={64}
-                                    height={12}
-                                  />
-                                </div>
-                              )}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <CourseSchedulePage schedule={schedule} />
-            ))}
+          {activeTab === "schedule" && (
+            <CourseSchedulePage courseId={course.courseid} />
+          )}
 
           {activeTab === "questions" && <QuestionBank courseId={course.courseid} />}
 

@@ -34,7 +34,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40">
+    <header className="bg-blue-900 shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-30 lg:left-64">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Left Section */}
         <div className="flex items-center">
@@ -46,13 +46,6 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
-
-          <div className="hidden lg:flex flex-col">
-            <h1 className="text-xl font-bold text-blue-600">NETI LMS</h1>
-            <p className="text-xs text-gray-500 italic -mt-1">
-              Learning Management System
-            </p>
-          </div>
         </div>
 
         {/* Right Section */}
@@ -77,11 +70,11 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
           <div className="relative">
             <div className="flex items-center space-x-3">
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-white">
                   {user?.name ||
                     `${user?.f_name || ""} ${user?.l_name || ""}`.trim()}
                 </p>
-                <p className="text-xs text-gray-500">Administrator</p>
+                <p className="text-xs text-gray-400">Administrator</p>
               </div>
               <div className="relative">
                 <button

@@ -109,7 +109,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       {/* Sidebar */}
       <div
         className={classNames(
-          "fixed left-0 w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:fixed lg:z-40 top-0 h-full lg:top-16 lg:h-[calc(100%-4rem)]",
+          "fixed left-0 w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:fixed top-0 h-full",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -132,6 +132,12 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto lg:py-4">
+            <div className="hidden lg:flex flex-col">
+              <h1 className="text-xl font-bold text-blue-600">NETI LMS</h1>
+              <p className="text-xs text-gray-500 italic -mt-1">
+                Learning Management System
+              </p>
+            </div>
             <div className="space-y-8">
               {/* Main Navigation */}
               <div>
