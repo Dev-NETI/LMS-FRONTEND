@@ -38,7 +38,7 @@ const userManagement = [
   },
   {
     name: "Instructors",
-    href: "/admin/instructors",
+    href: "/admin/user-management/instructor",
     icon: UserGroupIcon,
     current: false,
   },

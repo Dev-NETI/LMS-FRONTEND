@@ -53,3 +53,23 @@ export const getAllUser = async (params: GetUsersParams = {}): Promise<UserRespo
     throw error;
   }
 };
+
+export const getAllInstructors = async (params: GetUsersParams = {}): Promise<UserResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.search) queryParams.append('search', params.search);
+    if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+    if (params.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+
+    const url = `/api/admin/all-instructors${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw error;
+  }
+};

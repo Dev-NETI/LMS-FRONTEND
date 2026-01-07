@@ -134,7 +134,7 @@ export default function AllUsersPage() {
   return (
     <AuthGuard>
       <AdminLayout>
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
