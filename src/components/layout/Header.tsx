@@ -22,23 +22,16 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-40">
+    <header className="bg-blue-900 shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-30 lg:left-64">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Left section */}
         <div className="flex items-center space-x-4">
           <button
             onClick={onToggleSidebar}
-            className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-50 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-white hover:text-blue-600 hover:bg-gray-50 transition-colors"
           >
             <Bars3Icon className="w-6 h-6" />
           </button>
-
-          <div className="hidden lg:flex flex-col">
-            <h1 className="text-xl font-bold text-blue-600">NETI LMS</h1>
-            <p className="text-xs text-gray-500 italic -mt-1">
-              Learning Management System
-            </p>
-          </div>
         </div>
 
         {/* Right section */}
@@ -50,7 +43,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center space-x-2 p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors"
+              className="flex items-center space-x-2 p-2 rounded-lg text-gray-700  hover:text-blue-600 hover:bg-gray-50 transition-colors"
             >
               <img
                 src={`https://ui-avatars.com/api/?name=${user?.f_name}+${user?.l_name}&background=3B82F6&color=fff&size=32`}
@@ -58,10 +51,10 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                 className="w-8 h-8 rounded-full"
               />
               <div className="hidden md:block text-left">
-                <div className="text-sm font-medium">
+                <div className="text-sm font-medium text-white">
                   {user?.f_name} {user?.l_name}
                 </div>
-                <div className="text-xs text-gray-500">{user?.email}</div>
+                <div className="text-xs text-gray-400">{user?.email}</div>
               </div>
               <ChevronDownIcon className="w-4 h-4 text-gray-400" />
             </button>

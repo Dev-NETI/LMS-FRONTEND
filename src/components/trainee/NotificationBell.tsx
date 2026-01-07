@@ -104,7 +104,7 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleBellClick}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+        className="relative p-2 text-white hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
       >
         {unreadCount > 0 ? (
           <BellSolidIcon className="w-6 h-6" />

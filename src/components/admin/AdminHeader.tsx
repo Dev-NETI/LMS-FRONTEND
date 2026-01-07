@@ -35,9 +35,9 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
 
   return (
     <header className="bg-blue-900 shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-30 lg:left-64">
-      <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between px-4 py-3">
         {/* Left Section */}
-        <div className="flex items-center">
+        <div className="flex items-center space-x-4">
           {/* Mobile Sidebar Toggle */}
           <button
             type="button"
@@ -50,11 +50,6 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
 
         {/* Right Section */}
         <div className="flex items-center space-x-4">
-          {/* Search Button (Mobile) */}
-          <button className="md:hidden p-2 text-gray-400 hover:text-gray-500">
-            <MagnifyingGlassIcon className="h-5 w-5" />
-          </button>
-
           {/* Notifications */}
           <button className="relative p-2 text-gray-400 hover:text-gray-500">
             <BellIcon className="h-6 w-6" />

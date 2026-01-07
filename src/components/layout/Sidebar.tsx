@@ -15,6 +15,7 @@ import {
   XMarkIcon,
   PencilIcon,
 } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -43,25 +44,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-opacity-50 z-40 lg:hidden backdrop-blur-sm"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:fixed top-0 h-full ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:fixed lg:z-40 top-0 h-full lg:top-16 lg:h-[calc(100%-4rem)]`}
+        } `}
       >
         <div className="flex flex-col h-full">
           {/* Header - only show on mobile */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 lg:hidden">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <AcademicCapIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">LMS</span>
+              <Image
+                src="/LMS_ICON.svg"
+                alt="Logo"
+                width={200}
+                height={100}
+                className=""
+                priority
+              />
             </div>
             <button
               onClick={onClose}
@@ -73,6 +78,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto lg:py-4">
+            <div className="hidden lg:flex flex-col">
+              <Image
+                src="/LMS_ICON.svg"
+                alt="Logo"
+                width={200}
+                height={100}
+                className=""
+                priority
+              />
+            </div>
             {/* Primary Navigation */}
             <div>
               {navigation.map((item) => {

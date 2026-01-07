@@ -13,6 +13,7 @@ import {
   ExclamationTriangleIcon,
   BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -117,10 +118,14 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           {/* Header - only show on mobile */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 lg:hidden">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Admin</span>
+              <Image
+                src="/LMS_ICON.svg"
+                alt="Logo"
+                width={200}
+                height={100}
+                className=""
+                priority
+              />
             </div>
             <button
               onClick={onClose}
@@ -133,10 +138,18 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto lg:py-4">
             <div className="hidden lg:flex flex-col">
-              <h1 className="text-xl font-bold text-blue-600">NETI LMS</h1>
+              <Image
+                src="/LMS_ICON.svg"
+                alt="Logo"
+                width={200}
+                height={100}
+                className=""
+                priority
+              />
+              {/* <h1 className="text-xl font-bold text-blue-600">NETI LMS</h1>
               <p className="text-xs text-gray-500 italic -mt-1">
                 Learning Management System
-              </p>
+              </p> */}
             </div>
             <div className="space-y-8">
               {/* Main Navigation */}
