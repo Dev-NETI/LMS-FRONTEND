@@ -9,7 +9,6 @@ import { getCourseById, AdminCourse } from "@/src/services/courseService";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { Skeleton } from "@mui/material";
-import { Course } from "@/src/components/admin/course/types";
 import CourseSchedulePage from "@/src/components/admin/course/CourseSchedule";
 import CourseContentPage from "@/src/components/admin/course/CourseContent";
 import CourseTrainingMaterials from "@/src/components/admin/course/CourseTrainingMaterials";
@@ -21,28 +20,11 @@ import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable
 import QuestionBank from "@/src/components/admin/course/QuestionBank";
 import AssessmentManagement from "@/src/components/admin/course/AssessmentManagement";
 
-// Transform backend course data to frontend format
-const transformCourseData = (backendCourse: AdminCourse): Course => {
-  return {
-    ...backendCourse,
-    id: backendCourse.courseid,
-    title: backendCourse.coursename,
-    description: backendCourse.coursedescription || "No description available",
-    instructor: "TBD",
-    duration: "TBD",
-    level: "Beginner",
-    category: backendCourse.coursecategory || "General",
-    thumbnail: "/images/default-course.jpg",
-    createdAt: backendCourse.coursecreationdate,
-    updatedAt: backendCourse.courseupdateddate,
-    status: "Published",
-  };
-};
 
 export default function CourseDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const [course, setCourse] = useState<Course | null>(null);
+  const [course, setCourse] = useState<AdminCourse | null>(null);
   const [schedule, setSchedule] = useState<CourseSchedule[]>([]);
   const [activeTab, setActiveTab] = useState<
     "overview" | "content" | "schedule" | "materials" | "questions" | "assessments"
@@ -63,8 +45,7 @@ export default function CourseDetailsPage() {
         const courseResponse = await getCourseById(Number(params.id));
 
         if (courseResponse.success) {
-          const transformedCourse = transformCourseData(courseResponse.data);
-          setCourse(transformedCourse);
+          setCourse(courseResponse.data);
         } else {
           setError(courseResponse.message || "Failed to fetch course");
           toast.error(courseResponse.message || "Failed to fetch course");
@@ -260,7 +241,7 @@ export default function CourseDetailsPage() {
             <div className="flex items-center space-x-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {course.title}
+                  {course.coursename}
                 </h1>
                 <p className="text-gray-600 mt-1">
                   Course Details and Management
@@ -342,13 +323,13 @@ export default function CourseDetailsPage() {
 
           {/* Tab Content */}
           {activeTab === "overview" && (
-            <CourseDetailsTable courseId={course.id} />
+            <CourseDetailsTable courseId={course.courseid} />
           )}
 
           {activeTab === "content" && <CourseContentPage course={course} />}
 
           {activeTab === "materials" && (
-            <CourseTrainingMaterials courseId={course.id} />
+            <CourseTrainingMaterials courseId={course.courseid} />
           )}
 
           {activeTab === "schedule" &&
@@ -448,9 +429,9 @@ export default function CourseDetailsPage() {
               <CourseSchedulePage schedule={schedule} />
             ))}
 
-          {activeTab === "questions" && <QuestionBank courseId={course.id} />}
+          {activeTab === "questions" && <QuestionBank courseId={course.courseid} />}
 
-          {activeTab === "assessments" && <AssessmentManagement courseId={course.id} />}
+          {activeTab === "assessments" && <AssessmentManagement courseId={course.courseid} />}
         </div>
       </AdminLayout>
     </AuthGuard>

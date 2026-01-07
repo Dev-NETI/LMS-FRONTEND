@@ -99,7 +99,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
                   <div className="border-t border-gray-200 py-1">
                     <button
-                      onClick={logout}
+                      onClick={() => logout()}
                       className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <ArrowRightEndOnRectangleIcon className="w-4 h-4 mr-3 text-gray-400" />

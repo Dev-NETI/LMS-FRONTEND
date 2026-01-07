@@ -20,6 +20,7 @@ import {
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import SortableCourseContent from "./SortableCourseContent";
+import { AdminCourse } from "@/src/services/courseService";
 
 type ContentFormData = {
   title: string;
@@ -31,7 +32,7 @@ type ContentFormData = {
   order: number;
 };
 
-export default function CourseContentPage({ course }: { course: any }) {
+export default function CourseContentPage({ course }: { course: AdminCourse }) {
   const [contents, setContents] = useState<CourseContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -61,7 +62,7 @@ export default function CourseContentPage({ course }: { course: any }) {
 
   useEffect(() => {
     fetchCourseContents();
-  }, [course.id]);
+  }, [course.courseid]);
 
   // Handle Escape key to close modals
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function CourseContentPage({ course }: { course: any }) {
   const fetchCourseContents = async () => {
     try {
       setLoading(true);
-      const response = await getCourseContentsByCourse(course.id);
+      const response = await getCourseContentsByCourse(course.courseid);
       if (response.success) {
         setContents(response.contents || []);
       }
@@ -113,7 +114,12 @@ export default function CourseContentPage({ course }: { course: any }) {
 
       if (editingContent) {
         // Update existing content
-        const updateData = {
+        const updateData: {
+          title: string;
+          description: string;
+          order: number;
+          url?: string;
+        } = {
           title: formData.title,
           description: formData.description,
           order: formData.order,
@@ -132,7 +138,7 @@ export default function CourseContentPage({ course }: { course: any }) {
             return;
           }
           await createCourseContentFile({
-            course_id: course.id,
+            course_id: course.courseid,
             title: formData.title,
             description: formData.description,
             content_type: "file",
@@ -146,7 +152,7 @@ export default function CourseContentPage({ course }: { course: any }) {
             return;
           }
           await createCourseContentUrl({
-            course_id: course.id,
+            course_id: course.courseid,
             title: formData.title,
             description: formData.description,
             content_type: "url",
