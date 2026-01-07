@@ -25,7 +25,8 @@ export interface AuthContextType {
   token: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   loginAdmin: (credentials: LoginCredentials) => Promise<void>;
-  logout: (userType?: 'admin' | 'trainee') => Promise<void>;
+  loginInstructor: (credentials: LoginCredentials) => Promise<void>;
+  logout: (userType?: 'admin' | 'trainee' | 'instructor') => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
 }

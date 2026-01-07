@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Store user data (token already stored by authService)
       Cookies.set("user", JSON.stringify(userWithType), {
-        expires: 1/24, // 1 hour
+        expires: 1 / 24, // 1 hour
         secure: false,
         sameSite: "lax",
       });
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Store user data (session handled by Laravel)
       Cookies.set("user", JSON.stringify(userWithType), {
-        expires: 1/24, // 1 hour
+        expires: 1 / 24, // 1 hour
         secure: false,
         sameSite: "lax",
       });
@@ -119,7 +119,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = async (userType?: "admin" | "trainee") => {
+  const loginInstructor = async (credentials: LoginCredentials) => {
+    try {
+      const response = await authService.loginAdmin(
+        credentials.email,
+        credentials.password
+      );
+      const { user: userData } = response;
+
+      // Add user_type to distinguish admin from trainee
+      const userWithType = { ...userData, user_type: "instructor" as const };
+      setUser(userWithType);
+
+      // Store user data (session handled by Laravel)
+      Cookies.set("user", JSON.stringify(userWithType), {
+        expires: 1 / 24, // 1 hour
+        secure: false,
+        sameSite: "lax",
+      });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Login failed");
+    }
+  };
+
+  const logout = async (userType?: "admin" | "trainee" | "instructor") => {
     try {
       // Use provided userType or detect from current user
       const effectiveUserType = userType || user?.user_type;
@@ -129,6 +152,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await authService.logoutAdmin();
       } else if (effectiveUserType === "trainee") {
         await authService.logoutTrainee();
+      } else if (effectiveUserType === "instructor") {
+        await authService.logoutInstructor();
       }
     } catch (error) {
       console.error("Error during logout:", error);
@@ -154,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token,
     login,
     loginAdmin,
+    loginInstructor,
     logout,
     loading,
     isAuthenticated: !!user,

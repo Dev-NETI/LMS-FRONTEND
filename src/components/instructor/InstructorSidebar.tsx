@@ -15,7 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 
-interface AdminSidebarProps {
+interface InstructorSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -32,7 +32,7 @@ const navigation = [
 const userManagement = [
   {
     name: "All Users",
-    href: "/admin/user-management/all-users",
+    href: "/admin/users",
     icon: UsersIcon,
     current: false,
   },
@@ -43,8 +43,8 @@ const userManagement = [
     current: false,
   },
   {
-    name: "Trainees",
-    href: "/admin/trainees",
+    name: "Students",
+    href: "/admin/students",
     icon: AcademicCapIcon,
     current: false,
   },
@@ -78,7 +78,10 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+export default function InstructorSidebar({
+  isOpen,
+  onClose,
+}: InstructorSidebarProps) {
   const pathname = usePathname();
 
   // Update current state based on pathname
@@ -185,7 +188,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               </div>
 
               {/* User Management */}
-              <div>
+              {/* <div>
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                   User Management
                 </h3>
@@ -214,7 +217,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     </Link>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Course Management */}
               <div>

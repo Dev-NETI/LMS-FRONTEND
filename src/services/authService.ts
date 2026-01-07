@@ -77,4 +77,12 @@ export const authService = {
     Cookies.remove('auth_token');
     return response.data;
   },
+
+  // Instructor logout
+  async logoutInstructor() {
+    const response = await axios.post('/api/instructor/logout');
+    // Clear stored token
+    Cookies.remove('auth_token');
+    return response.data;
+  },
 };
