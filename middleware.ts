@@ -33,10 +33,14 @@ export function middleware(request: NextRequest) {
   if (user) {
     const userType = user.user_type
     
+    // Debug logging
+    console.log('Middleware - User Type:', userType, 'Path:', pathname)
+    
     // Admin route protection - only admins can access /admin/*
     if (pathname.startsWith('/admin')) {
       if (userType !== 'admin') {
         // Non-admin trying to access admin routes - logout and redirect
+        console.log('Non-admin trying to access admin routes, redirecting')
         const response = NextResponse.redirect(new URL('/login', request.url))
         response.cookies.delete('user')
         response.cookies.delete('auth_token')
@@ -85,11 +89,15 @@ export function middleware(request: NextRequest) {
     
     // Handle root path redirects based on user type
     if (pathname === '/') {
+      console.log('Root path redirect - User Type:', userType)
       if (userType === 'admin') {
+        console.log('Redirecting admin to /admin')
         return NextResponse.redirect(new URL('/admin', request.url))
       } else if (userType === 'instructor') {
+        console.log('Redirecting instructor to /instructor')
         return NextResponse.redirect(new URL('/instructor', request.url))
       } else if (userType === 'trainee') {
+        console.log('Redirecting trainee to /dashboard')
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     }

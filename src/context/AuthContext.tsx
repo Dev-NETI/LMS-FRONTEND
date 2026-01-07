@@ -36,6 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else if (userType === "trainee") {
               const response = await authService.getTraineeUser();
               setUser({ ...userData, ...response.user });
+            } else if (userType === "instructor") {
+              const response = await authService.getInstructorUser();
+              setUser({ ...userData, ...response.user });
             }
           } catch (verifyError) {
             console.log("Token validation failed, clearing stored data");

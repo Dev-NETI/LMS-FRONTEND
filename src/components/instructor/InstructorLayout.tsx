@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import AdminHeader from "./InstructorHeader";
-import AdminSidebar from "./InstructorSidebar";
 import InstructorHeader from "./InstructorHeader";
 import InstructorSidebar from "./InstructorSidebar";
 

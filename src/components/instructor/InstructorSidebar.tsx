@@ -56,10 +56,10 @@ const userManagement = [
   },
 ];
 
-const courseManagement = [
+const classManagement = [
   {
-    name: "All Courses",
-    href: "/admin/courses",
+    name: "My Class",
+    href: "/instructor/my-class",
     icon: BookOpenIcon,
     current: false,
   },
@@ -93,7 +93,7 @@ export default function InstructorSidebar({
 
   const updatedNavigation = updateNavigation(navigation);
   const updatedUserManagement = updateNavigation(userManagement);
-  const updatedCourseManagement = updateNavigation(courseManagement);
+  const updatedClassManangement = updateNavigation(classManagement);
   const updatedSystemManagement = updateNavigation(systemManagement);
 
   return (
@@ -222,42 +222,10 @@ export default function InstructorSidebar({
               {/* Course Management */}
               <div>
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  Course Management
+                  Class Management
                 </h3>
                 <div className="space-y-1">
-                  {updatedCourseManagement.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={onClose}
-                      className={classNames(
-                        item.current
-                          ? "bg-blue-50 border-blue-500 text-blue-700 border-r-2"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-                        "group flex items-center px-3 py-2 text-sm font-medium rounded-l-md transition-colors"
-                      )}
-                    >
-                      <item.icon
-                        className={classNames(
-                          item.current
-                            ? "text-blue-500"
-                            : "text-gray-400 group-hover:text-gray-500",
-                          "mr-3 h-5 w-5"
-                        )}
-                      />
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* System Management */}
-              <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  System Management
-                </h3>
-                <div className="space-y-1">
-                  {updatedSystemManagement.map((item) => (
+                  {updatedClassManangement.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}

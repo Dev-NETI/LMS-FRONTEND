@@ -78,6 +78,12 @@ export const authService = {
     return response.data;
   },
 
+  // Get current user (instructor)
+  async getInstructorUser() {
+    const response = await axios.get('/api/instructor/me');
+    return response.data;
+  },
+
   // Admin logout
   async logoutAdmin() {
     const response = await axios.post('/api/admin/logout');
