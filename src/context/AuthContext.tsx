@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { authService } from "@/services/authService";
 import { User, LoginCredentials, AuthContextType } from "@/types/auth";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -11,6 +12,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Idle timeout: 60 minutes = 60 * 60 * 1000 milliseconds
+  const IDLE_TIMEOUT = 60 * 60 * 1000;
 
   useEffect(() => {
     const initAuth = async () => {
@@ -53,6 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
+  // Auto-logout on idle timeout
+  const handleIdleTimeout = async () => {
+    if (user) {
+      console.log("User idle timeout reached, logging out...");
+      await logout(user.user_type);
+    }
+  };
+
+  // Setup idle timeout (only when user is authenticated)
+  useIdleTimeout({
+    timeout: IDLE_TIMEOUT,
+    onIdle: handleIdleTimeout,
+  });
+
   const login = async (credentials: LoginCredentials) => {
     try {
       const response = await authService.loginTrainee(
@@ -69,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Store user data (token already stored by authService)
       Cookies.set("user", JSON.stringify(userWithType), {
-        expires: 7,
+        expires: 1/24, // 1 hour
         secure: false,
         sameSite: "lax",
       });
@@ -92,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Store user data (session handled by Laravel)
       Cookies.set("user", JSON.stringify(userWithType), {
-        expires: 7,
+        expires: 1/24, // 1 hour
         secure: false,
         sameSite: "lax",
       });

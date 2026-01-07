@@ -24,7 +24,7 @@ export const authService = {
     // Store token for subsequent requests
     if (response.data.token) {
       Cookies.set('auth_token', response.data.token, {
-        expires: 7,
+        expires: 1/24, // 1 hour
         secure: false,
         sameSite: 'lax',
       });
@@ -41,7 +41,7 @@ export const authService = {
     // Store token for subsequent requests
     if (response.data.token) {
       Cookies.set('auth_token', response.data.token, {
-        expires: 7,
+        expires: 1/24, // 1 hour
         secure: false,
         sameSite: 'lax',
       });
