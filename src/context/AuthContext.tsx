@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginInstructor = async (credentials: LoginCredentials) => {
     try {
-      const response = await authService.loginAdmin(
+      const response = await authService.loginInstructor(
         credentials.email,
         credentials.password
       );

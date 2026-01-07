@@ -50,6 +50,22 @@ export const authService = {
     return response.data;
   },
 
+  async loginInstructor(email: string, password: string) {
+    await this.initCSRF();
+    const response = await axios.post('/api/instructor/login', { email, password });
+    
+    // Store token for subsequent requests
+    if (response.data.token) {
+      Cookies.set('auth_token', response.data.token, {
+        expires: 1/24, // 1 hour
+        secure: false,
+        sameSite: 'lax',
+      });
+    }
+    
+    return response.data;
+  },
+
   // Get current user (admin)
   async getAdminUser() {
     const response = await axios.get('/api/admin/me');
