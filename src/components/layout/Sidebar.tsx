@@ -7,9 +7,7 @@ import {
   HomeIcon,
   BookOpenIcon,
   CalendarIcon,
-  ChartBarIcon,
   AcademicCapIcon,
-  ChatBubbleLeftRightIcon,
   QuestionMarkCircleIcon,
   UserIcon,
   XMarkIcon,
@@ -28,7 +26,6 @@ const navigation = [
   { name: "Assessment", href: "/assessments", icon: PencilIcon },
   { name: "Schedule", href: "/schedule", icon: CalendarIcon },
   { name: "Certificates", href: "/certificates", icon: AcademicCapIcon },
-  { name: "Messages", href: "/messages", icon: ChatBubbleLeftRightIcon },
 ];
 
 const secondaryNavigation = [

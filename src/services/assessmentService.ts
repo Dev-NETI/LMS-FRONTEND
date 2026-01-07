@@ -37,6 +37,7 @@ export interface Assessment {
     percentage: number;
     is_passed: boolean;
     submitted_at: string;
+    status: 'in_progress' | 'submitted' | 'expired';
   };
   attempts?: AssessmentAttempt[];
 }

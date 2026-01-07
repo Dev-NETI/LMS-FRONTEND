@@ -15,12 +15,10 @@ import {
   ExclamationTriangleIcon,
   PlayIcon,
   EyeIcon,
-  ChartBarIcon,
   BookOpenIcon,
   TrophyIcon,
   DocumentTextIcon,
   SparklesIcon,
-  FireIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleIconSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
@@ -60,7 +58,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
         setAssessments(assessmentsResponse.data);
       }
 
-      console.log(assessments);
+      console.log(assessmentsResponse);
     } catch (err: any) {
       setError(err.message || "Failed to load assessments");
       console.error("Error fetching assessments:", err);
@@ -87,16 +85,14 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
   const filteredAndSortedAssessments = (() => {
     let filtered = assessments.filter((assessment) => {
       if (filter === "pending") {
-        return !assessment.attempts?.some(
-          (attempt) => attempt.status === "submitted"
-        );
+        // Pending: No last attempt or last attempt is not passed
+        return !assessment.last_attempt || !assessment.last_attempt.is_passed;
       }
       if (filter === "completed") {
-        return assessment.attempts?.some(
-          (attempt) => attempt.status === "submitted"
-        );
+        // Completed: Has a last attempt that is passed
+        return assessment.last_attempt && assessment.last_attempt.is_passed;
       }
-      return true; // 'all' d
+      return true; // 'all'
     });
 
     // Sort assessments
@@ -208,8 +204,7 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
                 Pending (
                 {
                   assessments.filter(
-                    (a) =>
-                      !a.attempts?.some((att) => att.status === "submitted")
+                    (a) => !a.last_attempt || !a.last_attempt.is_passed
                   ).length
                 }
                 )
@@ -224,8 +219,8 @@ export default function AssessmentList({ scheduleId }: AssessmentListProps) {
               >
                 Completed (
                 {
-                  assessments.filter((a) =>
-                    a.attempts?.some((att) => att.status === "submitted")
+                  assessments.filter(
+                    (a) => a.last_attempt && a.last_attempt.is_passed
                   ).length
                 }
                 )
