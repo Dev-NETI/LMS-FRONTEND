@@ -16,6 +16,10 @@ import {
   UsersIcon,
   ClockIcon,
   AcademicCapIcon,
+  UserIcon,
+  UserGroupIcon,
+  ClipboardDocumentCheckIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import AnnouncementFeed from "@/src/components/admin/schedule/AnnouncementFeed";
 import ProgressMonitoring from "@/src/components/admin/schedule/ProgressMonitoring";
@@ -36,6 +40,7 @@ export default function InstructorScheduleDetailsPage() {
   >("announcements");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchScheduleDetails = async () => {
@@ -219,6 +224,15 @@ export default function InstructorScheduleDetailsPage() {
                     Schedule Details and Training Management
                   </p>
                 </div>
+                <div>
+                  <Button
+                    onClick={() => setIsPersonnelModalOpen(true)}
+                    className="flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50"
+                  >
+                    <UserGroupIcon className="w-5 h-5" />
+                    View Personnel
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -318,6 +332,120 @@ export default function InstructorScheduleDetailsPage() {
               </div>
             </div>
           </div>
+
+          {/* Personnel Modal */}
+          {isPersonnelModalOpen && (
+            <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                {/* Modal Header */}
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserGroupIcon className="w-6 h-6 text-blue-600" />
+                    <h2 className="text-xl font-bold text-gray-900">
+                      Training Personnel
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setIsPersonnelModalOpen(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <XMarkIcon className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {/* Instructor */}
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="p-2 bg-blue-600 rounded-lg">
+                        <UserIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-blue-700 uppercase">
+                          Instructor
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {schedule.instructor || "Not Assigned"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Alternative Instructor */}
+                    <div className="flex items-center gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      <div className="p-2 bg-indigo-600 rounded-lg">
+                        <UserIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-indigo-700 uppercase">
+                          Alternative Instructor
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {schedule.alternative_instructor || "Not Assigned"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Assessor */}
+                    <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="p-2 bg-green-600 rounded-lg">
+                        <ClipboardDocumentCheckIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-green-700 uppercase">
+                          Assessor
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {schedule.assessor || "Not Assigned"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Alternative Assessor */}
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <div className="p-2 bg-emerald-600 rounded-lg">
+                        <ClipboardDocumentCheckIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-emerald-700 uppercase">
+                          Alternative Assessor
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {schedule.alternative_assessor || "Not Assigned"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Seat In */}
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <div className="p-2 bg-emerald-600 rounded-lg">
+                        <ClipboardDocumentCheckIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-emerald-700 uppercase">
+                          Seat-in Instructor
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {schedule.seat_instructor || "Not Assigned"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+                  <Button
+                    onClick={() => setIsPersonnelModalOpen(false)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Navigation Tabs */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

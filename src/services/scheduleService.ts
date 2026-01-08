@@ -8,6 +8,10 @@ export interface CourseSchedule {
   startdateformat: string;
   enddateformat: string;
   instructor?: string;
+  alternative_instructor?: string;
+  assessor?: string;
+  alternative_assessor?: string;
+  seat_instructor?: string;
   location?: string;
   description?: string;
   attendees?: number;
