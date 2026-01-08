@@ -20,11 +20,13 @@ import {
   UserGroupIcon,
   ClipboardDocumentCheckIcon,
   XMarkIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import AnnouncementFeed from "@/src/components/admin/schedule/AnnouncementFeed";
 import ProgressMonitoring from "@/src/components/admin/schedule/ProgressMonitoring";
 import TrainingMaterials from "@/src/components/admin/schedule/TrainingMaterials";
 import EnrolledStudents from "@/src/components/admin/schedule/EnrolledStudents";
+import AssessmentResults from "@/src/components/instructor/AssessmentResults";
 import {
   CourseSchedule,
   getCourseScheduleById,
@@ -36,7 +38,7 @@ export default function InstructorScheduleDetailsPage() {
   const router = useRouter();
   const [schedule, setSchedule] = useState<CourseSchedule | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "announcements" | "progress" | "course_overview" | "materials" | "students"
+    "announcements" | "progress" | "course_overview" | "materials" | "students" | "assessments"
   >("announcements");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -518,6 +520,20 @@ export default function InstructorScheduleDetailsPage() {
                   {schedule.active_enrolled || 0}
                 </span>
               </button>
+
+              {/* Assessment Results tab - available for all modes */}
+              <button
+                onClick={() => setActiveTab("assessments")}
+                className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
+                  activeTab === "assessments"
+                    ? "border-blue-600 text-blue-700 bg-blue-50"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                <ClipboardDocumentListIcon className="w-5 h-5 mr-2" />
+                <span className="hidden lg:inline">Assessment Results</span>
+                <span className="lg:hidden">Assessments</span>
+              </button>
             </nav>
           </div>
 
@@ -554,6 +570,12 @@ export default function InstructorScheduleDetailsPage() {
                   students={schedule.enrolled_students || []}
                   isLoading={false}
                 />
+              </div>
+            )}
+
+            {activeTab === "assessments" && (
+              <div className="p-6">
+                <AssessmentResults scheduleId={schedule.scheduleid} />
               </div>
             )}
           </div>

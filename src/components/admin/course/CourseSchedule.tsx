@@ -1,9 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CalendarIcon, UsersIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import {
+  CalendarIcon,
+  UsersIcon,
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { CourseSchedule, getCourseSchedule, PaginationMeta, ScheduleParams } from "@/src/services/scheduleService";
+import {
+  CourseSchedule,
+  getCourseSchedule,
+  PaginationMeta,
+  ScheduleParams,
+} from "@/src/services/scheduleService";
 
 interface CourseScheduleProps {
   courseId: number;
@@ -16,7 +27,7 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const itemsPerPage = 10;
 
   // Fetch schedule data with pagination and search
@@ -24,7 +35,7 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await getCourseSchedule(courseId, {
         page: params.page || currentPage,
         limit: itemsPerPage,
@@ -38,7 +49,10 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
         setError(response.message || "Failed to fetch course schedule");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred while fetching schedule";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "An error occurred while fetching schedule";
       setError(errorMessage);
       console.error("Error fetching course schedule:", err);
     } finally {
@@ -129,10 +143,11 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
                 Course Schedule
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                All scheduled training, lectures, and assessments for this course
+                All scheduled training, lectures, and assessments for this
+                course
               </p>
             </div>
-            
+
             {/* Search Input with Button */}
             <div className="flex items-center space-x-2">
               <div className="relative">
@@ -144,7 +159,9 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
                   placeholder="Search batch number..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && handleSearch(searchTerm)
+                  }
                   className="block w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>
@@ -156,15 +173,13 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
               </button>
             </div>
           </div>
-          
+
           {/* Results count */}
           {pagination && (
             <div className="text-sm text-gray-600">
-              {searchTerm ? (
-                `Found ${pagination.totalItems} result(s) for "${searchTerm}"`
-              ) : (
-                `Showing ${pagination.totalItems} total schedule(s)`
-              )}
+              {searchTerm
+                ? `Found ${pagination.totalItems} result(s) for "${searchTerm}"`
+                : `Showing ${pagination.totalItems} total schedule(s)`}
             </div>
           )}
         </div>
@@ -276,7 +291,7 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
                             {scheduleItem.active_enrolled || 0}
                           </span>
                           <span className="text-xs text-gray-500 ml-1">
-                            / {scheduleItem.total_enrolled || 0}
+                            / {scheduleItem.course?.maximumtrainees || 0}
                           </span>
                         </div>
                         {(scheduleItem.active_enrolled || 0) > 0 && (
@@ -312,7 +327,7 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
@@ -335,15 +350,27 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> to{' '}
+                  Showing{" "}
                   <span className="font-medium">
-                    {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
-                  </span>{' '}
-                  of <span className="font-medium">{pagination.totalItems}</span> results
+                    {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(
+                      pagination.currentPage * pagination.itemsPerPage,
+                      pagination.totalItems
+                    )}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-medium">{pagination.totalItems}</span>{" "}
+                  results
                 </p>
               </div>
               <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <nav
+                  className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                  aria-label="Pagination"
+                >
                   <button
                     onClick={handlePreviousPage}
                     disabled={!pagination.hasPreviousPage}
@@ -351,22 +378,25 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
                   >
                     <ChevronLeftIcon className="h-5 w-5" />
                   </button>
-                  
+
                   {/* Page numbers */}
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                  {Array.from(
+                    { length: pagination.totalPages },
+                    (_, i) => i + 1
+                  ).map((page) => (
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         page === pagination.currentPage
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
                       }`}
                     >
                       {page}
                     </button>
                   ))}
-                  
+
                   <button
                     onClick={handleNextPage}
                     disabled={!pagination.hasNextPage}
@@ -393,7 +423,7 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
           </p>
         </div>
       )}
-      
+
       {/* Empty state for search */}
       {!loading && schedule.length === 0 && searchTerm && (
         <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
@@ -402,10 +432,11 @@ export default function CourseSchedulePage({ courseId }: CourseScheduleProps) {
             No results found
           </h3>
           <p className="text-gray-600">
-            No batch numbers match your search term "{searchTerm}". Try a different search.
+            No batch numbers match your search term "{searchTerm}". Try a
+            different search.
           </p>
           <button
-            onClick={() => handleSearch('')}
+            onClick={() => handleSearch("")}
             className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Clear search

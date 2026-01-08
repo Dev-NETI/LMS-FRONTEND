@@ -530,3 +530,66 @@ export const getStatusText = (status: string): string => {
       return status;
   }
 };
+
+// Instructor Assessment Result Interfaces
+export interface TraineeAssessmentResult {
+  trainee_id: number;
+  trainee_name: string;
+  trainee_email?: string;
+  rank?: string;
+  rankacronym?: string;
+  assessment_id: number;
+  assessment_title: string;
+  attempts: AssessmentAttempt[];
+  best_score?: number;
+  best_percentage?: number;
+  attempts_count: number;
+  last_attempt_date?: string;
+  status: 'not_started' | 'in_progress' | 'completed' | 'passed' | 'failed';
+}
+
+export interface ScheduleAssessmentResults {
+  schedule_id: number;
+  course_name: string;
+  assessments: Assessment[];
+  trainee_results: TraineeAssessmentResult[];
+}
+
+// Instructor Functions
+
+// Get all assessment results for a schedule (instructor)
+export const getScheduleAssessmentResults = async (scheduleId: number): Promise<{
+  success: boolean;
+  data: ScheduleAssessmentResults;
+}> => {
+  try {
+    const response = await api.get(`/api/instructor/schedules/${scheduleId}/assessment-results`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching schedule assessment results:', error);
+    throw error;
+  }
+};
+
+// Get specific trainee's assessment attempts (instructor)
+export const getTraineeAssessmentAttempts = async (scheduleId: number, traineeId: number, assessmentId: number): Promise<{
+  success: boolean;
+  data: {
+    trainee: {
+      trainee_id: number;
+      trainee_name: string;
+      email?: string;
+      rank?: string;
+    };
+    assessment: Assessment;
+    attempts: AssessmentAttempt[];
+  };
+}> => {
+  try {
+    const response = await api.get(`/api/instructor/schedules/${scheduleId}/trainees/${traineeId}/assessments/${assessmentId}/attempts`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching trainee assessment attempts:', error);
+    throw error;
+  }
+};
