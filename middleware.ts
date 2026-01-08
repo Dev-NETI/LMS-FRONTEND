@@ -79,9 +79,9 @@ export function middleware(request: NextRequest) {
     // Redirect authenticated users away from login/auth pages
     if (pathname.includes('/login') || pathname.includes('/auth')) {
       if (userType === 'admin') {
-        return NextResponse.redirect(new URL('/admin', request.url))
+        return NextResponse.redirect(new URL('/admin/auth/login', request.url))
       } else if (userType === 'instructor') {
-        return NextResponse.redirect(new URL('/instructor', request.url))
+        return NextResponse.redirect(new URL('/instructor/auth/login', request.url))
       } else if (userType === 'trainee') {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
@@ -92,10 +92,10 @@ export function middleware(request: NextRequest) {
       console.log('Root path redirect - User Type:', userType)
       if (userType === 'admin') {
         console.log('Redirecting admin to /admin')
-        return NextResponse.redirect(new URL('/admin', request.url))
+        return NextResponse.redirect(new URL('/admin/auth/login', request.url))
       } else if (userType === 'instructor') {
         console.log('Redirecting instructor to /instructor')
-        return NextResponse.redirect(new URL('/instructor', request.url))
+        return NextResponse.redirect(new URL('/instructor/auth/login', request.url))
       } else if (userType === 'trainee') {
         console.log('Redirecting trainee to /dashboard')
         return NextResponse.redirect(new URL('/dashboard', request.url))

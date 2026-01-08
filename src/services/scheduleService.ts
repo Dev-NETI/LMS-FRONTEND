@@ -15,12 +15,13 @@ export interface CourseSchedule {
   total_enrolled?: number;
   active_enrolled?: number;
   enrolled_students?: EnrolledStudent[];
-  modeofdeliveryid?: number;
+  modeofdelivery?: string;
 }
 
 export interface Course {
   courseid: number;
   coursename: string;
+  maximumtrainees: number;
   modeofdeliveryid?: number;
 }
 
@@ -164,6 +165,24 @@ export const getScheduleForTrainee = async (scheduleId: number): Promise<CourseS
     }
   } catch (error) {
     console.error('Error fetching trainee schedule:', error);
+    throw error;
+  }
+};
+
+// Instructor-specific function to get schedules by instructor ID
+export const getInstructorSchedules = async (params: ScheduleParams = {}): Promise<CourseScheduleResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.search) queryParams.append('search', params.search);
+
+    const url = `/api/instructor/my-schedules${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching instructor schedules:', error);
     throw error;
   }
 };
