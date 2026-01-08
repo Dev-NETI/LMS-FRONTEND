@@ -4,7 +4,7 @@ export interface AnnouncementPost {
   id: number;
   schedule_id: number;
   created_by_user_id?: number;
-  user_type?: 'admin' | 'trainee';
+  user_type?: 'admin' | 'trainee' | 'instructor';
   title: string;
   content: string;
   is_active: boolean;
@@ -27,7 +27,7 @@ export interface AnnouncementUser {
   l_name?: string;
   suffix?: string;
   email?: string;
-  user_type: 'admin' | 'trainee';
+  user_type: 'admin' | 'trainee' | 'instructor';
 }
 
 export interface ScheduleData {
@@ -39,7 +39,7 @@ export interface ReplyData {
   id: number;
   announcement_id: number;
   user_id: number;
-  user_type?: 'admin' | 'trainee';
+  user_type?: 'admin' | 'trainee' | 'instructor';
   content: string;
   is_active?: boolean;
   created_at: string;
@@ -61,7 +61,7 @@ export interface ReplyResponse {
 
 export interface CreateReplyData {
   content: string;
-  user_type?  : 'admin' | 'trainee';
+  user_type?: 'admin' | 'trainee' | 'instructor';
 }
 
 export interface AnnouncementResponse {
@@ -78,7 +78,7 @@ export interface CreateAnnouncementData {
   content: string;
   is_active?: boolean;
   published_at?: string;
-  user_type?: 'admin' | 'trainee';
+  user_type?: 'admin' | 'trainee' | 'instructor';
 }
 
 export const getAnnouncementsBySchedule = async (scheduleId: number): Promise<{ schedule: ScheduleData; announcements: AnnouncementPost[] }> => {

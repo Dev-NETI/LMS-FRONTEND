@@ -5,7 +5,7 @@ export interface User {
   email: string;
   f_name?: string;
   l_name?: string;
-  user_type?: 'admin' | 'trainee'; // Optional field to distinguish user types
+  user_type?: 'admin' | 'trainee' | 'instructor'; // Optional field to distinguish user types
 }
 
 export interface LoginCredentials {

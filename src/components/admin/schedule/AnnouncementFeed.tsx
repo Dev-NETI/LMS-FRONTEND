@@ -107,16 +107,13 @@ export default function AnnouncementFeed({
         title: newAnnouncement.title,
         content: newAnnouncement.content,
         is_active: true,
-        user_type: "admin",
+        user_type: user?.user_type || "admin",
       };
 
       const response = await createAnnouncement(createData);
       setAnnouncements([response.announcement, ...announcements]);
       setNewAnnouncement({ title: "", content: "" });
       setShowNewAnnouncementForm(false);
-      
-      // Show success message - notifications are automatically created by backend
-      console.log("✅ Announcement created! Notifications sent to all enrolled trainees.");
     } catch (error) {
       console.error("Failed to create announcement:", error);
     } finally {
@@ -129,7 +126,7 @@ export default function AnnouncementFeed({
     f_name?: string;
     m_name?: string;
     l_name?: string;
-    user_type?: "admin" | "trainee";
+    user_type?: "admin" | "trainee" | "instructor";
   }) => {
     if (!user) return "Unknown User";
 
@@ -155,23 +152,33 @@ export default function AnnouncementFeed({
       return "Admin User";
     } else if (user.user_type === "trainee") {
       return "Trainee User";
+    } else if (user.user_type === "instructor") {
+      return "Instructor User";
     }
 
     return "Unknown User";
   };
 
-  const getUserBadge = (userType?: "admin" | "trainee") => {
+  const getUserBadge = (userType?: "admin" | "trainee" | "instructor") => {
     if (!userType) return null;
+
+    const badgeStyles = {
+      admin: "bg-blue-100 text-blue-700",
+      trainee: "bg-green-100 text-green-700",
+      instructor: "bg-purple-100 text-purple-700",
+    };
+
+    const badgeLabels = {
+      admin: "Admin",
+      trainee: "Trainee",
+      instructor: "Instructor",
+    };
 
     return (
       <span
-        className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-          userType === "admin"
-            ? "bg-blue-100 text-blue-700"
-            : "bg-green-100 text-green-700"
-        }`}
+        className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${badgeStyles[userType]}`}
       >
-        {userType === "admin" ? "Admin" : "Trainee"}
+        {badgeLabels[userType]}
       </span>
     );
   };
@@ -215,7 +222,7 @@ export default function AnnouncementFeed({
 
       const replyData: CreateReplyData = {
         content: content.trim(),
-        user_type: "admin",
+        user_type: user?.user_type || "admin",
       };
 
       const response = await createAnnouncementReply(announcementId, replyData);
@@ -813,7 +820,8 @@ export default function AnnouncementFeed({
                         >
                           <div className="w-7 h-7 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center shadow-sm">
                             <span className="text-white text-xs font-medium">
-                              {reply.user_type === "admin"
+                              {reply.user_type === "admin" ||
+                              reply.user_type === "instructor"
                                 ? reply.user?.f_name?.charAt(0).toUpperCase()
                                 : reply.trainee_user?.f_name
                                     ?.charAt(0)
@@ -824,7 +832,8 @@ export default function AnnouncementFeed({
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center space-x-1">
                                 <span className="font-medium text-gray-900 text-xs">
-                                  {reply.user_type === "admin"
+                                  {reply.user_type === "admin" ||
+                                  reply.user_type === "instructor"
                                     ? reply.user?.f_name +
                                       " " +
                                       reply.user?.l_name

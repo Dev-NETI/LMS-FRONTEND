@@ -357,7 +357,12 @@ export default function MyClassPage() {
 
                         {/* Action Buttons */}
                         <div className="flex gap-2">
-                          <button className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                          <button
+                            onClick={() =>
+                              (window.location.href = `/instructor/my-class/schedule/${schedule.scheduleid}`)
+                            }
+                            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                          >
                             View Class
                           </button>
                           <button className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors">
