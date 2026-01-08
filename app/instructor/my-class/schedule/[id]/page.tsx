@@ -91,30 +91,40 @@ export default function InstructorScheduleDetailsPage() {
     return (
       <AuthGuard>
         <InsturctorLayout>
-          <div className="space-y-6">
+          <div className="space-y-6 p-6">
             {/* Header skeleton */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Skeleton variant="rectangular" width={120} height={32} />
+                <Skeleton
+                  variant="rectangular"
+                  width={120}
+                  height={40}
+                  className="rounded-md"
+                />
                 <div>
-                  <Skeleton variant="text" width={300} height={32} />
-                  <Skeleton variant="text" width={200} height={20} />
+                  <Skeleton variant="text" width={300} height={36} />
+                  <Skeleton variant="text" width={200} height={24} />
                 </div>
               </div>
             </div>
 
             {/* Stats skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-lg border border-gray-200 p-6"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center">
-                    <Skeleton variant="rounded" width={40} height={40} />
+                    <Skeleton
+                      variant="rounded"
+                      width={48}
+                      height={48}
+                      className="rounded-lg"
+                    />
                     <div className="ml-4 flex-1">
-                      <Skeleton variant="text" width={80} height={14} />
-                      <Skeleton variant="text" width={60} height={24} />
+                      <Skeleton variant="text" width={80} height={16} />
+                      <Skeleton variant="text" width={60} height={28} />
                     </div>
                   </div>
                 </div>
@@ -122,13 +132,13 @@ export default function InstructorScheduleDetailsPage() {
             </div>
 
             {/* Content skeleton */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <Skeleton variant="text" width={200} height={24} />
-              <div className="mt-4 space-y-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <Skeleton variant="text" width={200} height={28} />
+              <div className="mt-6 space-y-4">
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div key={index}>
-                    <Skeleton variant="text" width="100%" height={16} />
-                    <Skeleton variant="text" width="80%" height={16} />
+                    <Skeleton variant="text" width="100%" height={20} />
+                    <Skeleton variant="text" width="80%" height={20} />
                   </div>
                 ))}
               </div>
@@ -143,26 +153,33 @@ export default function InstructorScheduleDetailsPage() {
     return (
       <AuthGuard>
         <InsturctorLayout>
-          <div className="text-center py-12">
-            <div className="mx-auto w-16 h-16 text-red-500 mb-4">
-              <CalendarIcon className="w-16 h-16" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              {error ? "Failed to load schedule" : "Schedule not found"}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {error || "The schedule you're looking for doesn't exist."}
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => router.push("/instructor/my-class")}
-              >
-                Back to My Classes
-              </Button>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center max-w-md mx-auto p-8 bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                <CalendarIcon className="w-10 h-10 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                {error ? "Failed to Load Schedule" : "Schedule Not Found"}
+              </h2>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                {error ||
+                  "The schedule you're looking for doesn't exist or has been removed."}
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="px-6"
+                >
+                  Try Again
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/instructor/my-class")}
+                  className="px-6"
+                >
+                  Back to My Classes
+                </Button>
+              </div>
             </div>
           </div>
         </InsturctorLayout>
@@ -173,46 +190,51 @@ export default function InstructorScheduleDetailsPage() {
   return (
     <AuthGuard>
       <InsturctorLayout>
-        <div className="space-y-6">
+        <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.back()}
-                className="flex items-center"
-              >
-                <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {schedule.batchno} - {schedule.course?.coursename}
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Schedule Details and Training Management
-                </p>
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.back()}
+              className="flex items-center hover:bg-gray-100 transition-colors mb-4"
+            >
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold">
+                      {schedule.batchno}
+                    </span>
+                  </div>
+                  <h1 className="text-3xl font-bold mb-2">
+                    <i>#{schedule.scheduleid} -</i>{" "}
+                    {schedule.course?.coursename}
+                  </h1>
+                  <p className="text-blue-100 flex items-center gap-2">
+                    <AcademicCapIcon className="w-5 h-5" />
+                    Schedule Details and Training Management
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <CalendarIcon className="w-6 h-6 text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all hover:border-blue-300">
+              <div className="flex items-start">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm">
+                  <CalendarIcon className="w-6 h-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="ml-4 flex-1">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                     Start Date
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xl font-bold text-gray-900">
                     {schedule.startdateformat
                       ? new Date(schedule.startdateformat).toLocaleDateString(
                           "en-US",
@@ -228,14 +250,16 @@ export default function InstructorScheduleDetailsPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CalendarIcon className="w-6 h-6 text-green-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all hover:border-green-300">
+              <div className="flex items-start">
+                <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-sm">
+                  <CalendarIcon className="w-6 h-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">End Date</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                <div className="ml-4 flex-1">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    End Date
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
                     {schedule.enddateformat
                       ? new Date(schedule.enddateformat).toLocaleDateString(
                           "en-US",
@@ -251,37 +275,44 @@ export default function InstructorScheduleDetailsPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <ClockIcon className="w-6 h-6 text-purple-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all hover:border-purple-300">
+              <div className="flex items-start">
+                <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-sm">
+                  <ClockIcon className="w-6 h-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Duration</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                <div className="ml-4 flex-1">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    Duration
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
                     {schedule.startdateformat && schedule.enddateformat
                       ? getDurationInDays(
                           schedule.startdateformat,
                           schedule.enddateformat
                         )
                       : "0"}{" "}
-                    days
+                    <span className="text-sm font-normal text-gray-600">
+                      days
+                    </span>
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <UsersIcon className="w-6 h-6 text-orange-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all hover:border-orange-300">
+              <div className="flex items-start">
+                <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-sm">
+                  <UsersIcon className="w-6 h-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="ml-4 flex-1">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                     Total Enrolled
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {schedule.total_enrolled || 0}
+                  <p className="text-xl font-bold text-gray-900">
+                    {schedule.active_enrolled || 0}
+                    <span className="text-sm font-normal text-gray-600 ml-1">
+                      Trainees
+                    </span>
                   </p>
                 </div>
               </div>
@@ -289,14 +320,14 @@ export default function InstructorScheduleDetailsPage() {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="bg-white border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <nav className="flex flex-wrap md:flex-nowrap">
               <button
                 onClick={() => setActiveTab("announcements")}
-                className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center justify-center transition-colors ${
+                className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
                   activeTab === "announcements"
-                    ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-600 text-blue-700 bg-blue-50"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 <MegaphoneIcon className="w-5 h-5 mr-2" />
@@ -305,10 +336,10 @@ export default function InstructorScheduleDetailsPage() {
 
               <button
                 onClick={() => setActiveTab("course_overview")}
-                className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center justify-center transition-colors ${
+                className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
                   activeTab === "course_overview"
-                    ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-600 text-blue-700 bg-blue-50"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 <AcademicCapIcon className="w-5 h-5 mr-2" />
@@ -319,69 +350,85 @@ export default function InstructorScheduleDetailsPage() {
               {schedule.course?.modeofdeliveryid === 4 && (
                 <button
                   onClick={() => setActiveTab("progress")}
-                  className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center justify-center transition-colors ${
+                  className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
                     activeTab === "progress"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ? "border-blue-600 text-blue-700 bg-blue-50"
+                      : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
                   <ChartBarIcon className="w-5 h-5 mr-2" />
-                  Progress Monitoring
+                  Progress
                 </button>
               )}
 
               {/* Training Materials tab - available for all modes */}
               <button
                 onClick={() => setActiveTab("materials")}
-                className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center justify-center transition-colors ${
+                className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
                   activeTab === "materials"
-                    ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-600 text-blue-700 bg-blue-50"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 <DocumentTextIcon className="w-5 h-5 mr-2" />
-                Training Materials
+                Materials
               </button>
 
               {/* Enrolled Students tab - available for all modes */}
               <button
                 onClick={() => setActiveTab("students")}
-                className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center justify-center transition-colors ${
+                className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
                   activeTab === "students"
-                    ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-600 text-blue-700 bg-blue-50"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 <UsersIcon className="w-5 h-5 mr-2" />
-                My Trainees ({schedule.enrolled_students?.length || 0})
+                <span className="hidden lg:inline">My Trainees</span>
+                <span className="lg:hidden">Trainees</span>
+                <span className="ml-1.5 px-2 py-0.5 bg-gray-200 text-gray-700 rounded-full text-xs font-bold">
+                  {schedule.active_enrolled || 0}
+                </span>
               </button>
             </nav>
           </div>
 
           {/* Tab Content */}
-          {activeTab === "announcements" && (
-            <AnnouncementFeed scheduleId={schedule.scheduleid} />
-          )}
-
-          {activeTab === "course_overview" && (
-            <CourseDetailsTable courseId={schedule.courseid} />
-          )}
-
-          {activeTab === "progress" &&
-            schedule.course?.modeofdeliveryid === 4 && (
-              <ProgressMonitoring scheduleId={schedule.scheduleid} />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {activeTab === "announcements" && (
+              <div className="p-6">
+                <AnnouncementFeed scheduleId={schedule.scheduleid} />
+              </div>
             )}
 
-          {activeTab === "materials" && (
-            <TrainingMaterials courseId={schedule.courseid} />
-          )}
+            {activeTab === "course_overview" && (
+              <div className="p-6">
+                <CourseDetailsTable courseId={schedule.courseid} />
+              </div>
+            )}
 
-          {activeTab === "students" && (
-            <EnrolledStudents
-              students={schedule.enrolled_students || []}
-              isLoading={false}
-            />
-          )}
+            {activeTab === "progress" &&
+              schedule.course?.modeofdeliveryid === 4 && (
+                <div className="p-6">
+                  <ProgressMonitoring scheduleId={schedule.scheduleid} />
+                </div>
+              )}
+
+            {activeTab === "materials" && (
+              <div className="p-6">
+                <TrainingMaterials courseId={schedule.courseid} />
+              </div>
+            )}
+
+            {activeTab === "students" && (
+              <div className="p-6">
+                <EnrolledStudents
+                  students={schedule.enrolled_students || []}
+                  isLoading={false}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </InsturctorLayout>
     </AuthGuard>
