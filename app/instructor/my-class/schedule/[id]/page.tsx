@@ -32,13 +32,20 @@ import {
   getCourseScheduleById,
 } from "@/src/services/scheduleService";
 import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable";
+import Assessment from "@/src/components/instructor/Assessment";
 
 export default function InstructorScheduleDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [schedule, setSchedule] = useState<CourseSchedule | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "announcements" | "progress" | "course_overview" | "materials" | "students" | "assessments"
+    | "announcements"
+    | "progress"
+    | "course_overview"
+    | "materials"
+    | "students"
+    | "assessments"
+    | "assessment_results"
   >("announcements");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -521,7 +528,7 @@ export default function InstructorScheduleDetailsPage() {
                 </span>
               </button>
 
-              {/* Assessment Results tab - available for all modes */}
+              {/* Assessment tab - available for all modes */}
               <button
                 onClick={() => setActiveTab("assessments")}
                 className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
@@ -531,8 +538,22 @@ export default function InstructorScheduleDetailsPage() {
                 }`}
               >
                 <ClipboardDocumentListIcon className="w-5 h-5 mr-2" />
+                <span className="hidden lg:inline">Assessment</span>
+                <span className="lg:hidden">Assessment</span>
+              </button>
+
+              {/* Assessment Results tab - available for all modes */}
+              <button
+                onClick={() => setActiveTab("assessment_results")}
+                className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
+                  activeTab === "assessment_results"
+                    ? "border-blue-600 text-blue-700 bg-blue-50"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                <ClipboardDocumentListIcon className="w-5 h-5 mr-2" />
                 <span className="hidden lg:inline">Assessment Results</span>
-                <span className="lg:hidden">Assessments</span>
+                <span className="lg:hidden">Assessments Results</span>
               </button>
             </nav>
           </div>
@@ -574,6 +595,15 @@ export default function InstructorScheduleDetailsPage() {
             )}
 
             {activeTab === "assessments" && (
+              <div className="p-6">
+                <Assessment
+                  scheduleId={schedule.scheduleid}
+                  courseId={schedule.courseid}
+                />
+              </div>
+            )}
+
+            {activeTab === "assessment_results" && (
               <div className="p-6">
                 <AssessmentResults scheduleId={schedule.scheduleid} />
               </div>

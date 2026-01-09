@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -222,9 +222,8 @@ export default function AssessmentResults({
                   const isExpanded = expandedRows.has(rowKey);
 
                   return (
-                    <>
+                    <React.Fragment key={rowKey}>
                       <tr
-                        key={rowKey}
                         className="hover:bg-gray-50 transition-colors"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -251,7 +250,8 @@ export default function AssessmentResults({
                           {getStatusBadge(result.status)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {result.best_percentage !== undefined ? (
+                          {result.best_percentage !== undefined &&
+                          result.best_percentage !== null ? (
                             <span
                               className={`text-sm font-semibold ${getScoreBadgeColor(
                                 result.best_percentage
@@ -328,14 +328,16 @@ export default function AssessmentResults({
                                       </p>
                                       <p
                                         className={`text-sm font-semibold ${
-                                          attempt.percentage
+                                          attempt.percentage !== undefined &&
+                                          attempt.percentage !== null
                                             ? getScoreBadgeColor(
                                                 attempt.percentage
                                               )
                                             : "text-gray-500"
                                         }`}
                                       >
-                                        {attempt.percentage !== undefined
+                                        {attempt.percentage !== undefined &&
+                                        attempt.percentage !== null
                                           ? `${attempt.percentage.toFixed(1)}%`
                                           : "N/A"}
                                       </p>
@@ -383,7 +385,7 @@ export default function AssessmentResults({
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
             </tbody>
