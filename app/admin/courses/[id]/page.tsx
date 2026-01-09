@@ -1,13 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "@/src/components/admin/AdminLayout";
 import AuthGuard from "@/src/components/auth/AuthGuard";
 import { Button } from "@/src/components/ui/button";
 import { getCourseById, AdminCourse } from "@/src/services/courseService";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  XCircleIcon,
+  AcademicCapIcon,
+  DocumentTextIcon,
+  FolderIcon,
+  CalendarIcon,
+  QuestionMarkCircleIcon,
+  ClipboardDocumentCheckIcon,
+  BookOpenIcon,
+} from "@heroicons/react/24/outline";
 import { Skeleton } from "@mui/material";
 import CourseSchedulePage from "@/src/components/admin/course/CourseSchedule";
 import CourseContentPage from "@/src/components/admin/course/CourseContent";
@@ -232,71 +243,77 @@ export default function CourseDetailsPage() {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="bg-white border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <nav className="flex flex-wrap gap-2 p-3">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
                   activeTab === "overview"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
+                <AcademicCapIcon className="w-4 h-4" />
                 Overview
               </button>
 
               <button
                 onClick={() => setActiveTab("content")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
                   activeTab === "content"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
+                <DocumentTextIcon className="w-4 h-4" />
                 Content & Syllabus
               </button>
 
               <button
                 onClick={() => setActiveTab("materials")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
                   activeTab === "materials"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
+                <FolderIcon className="w-4 h-4" />
                 Training Materials
               </button>
 
               <button
                 onClick={() => setActiveTab("questions")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
                   activeTab === "questions"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
+                <QuestionMarkCircleIcon className="w-4 h-4" />
                 Question Bank
               </button>
 
               <button
                 onClick={() => setActiveTab("assessments")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
                   activeTab === "assessments"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
+                <ClipboardDocumentCheckIcon className="w-4 h-4" />
                 Assessments
               </button>
 
               <button
                 onClick={() => setActiveTab("schedule")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
                   activeTab === "schedule"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
+                <CalendarIcon className="w-4 h-4" />
                 Schedule
               </button>
             </nav>
