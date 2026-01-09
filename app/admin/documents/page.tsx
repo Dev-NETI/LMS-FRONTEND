@@ -32,7 +32,7 @@ import toast from "react-hot-toast";
 
 type ViewMode = "grid" | "list" | "table";
 type CategoryFilter = "all" | "handout" | "document" | "manual";
-type SortField = "created_at" | "title" | "file_size" | "views";
+type SortField = "created_at" | "title" | "file_size";
 type SortOrder = "asc" | "desc";
 
 export default function DocumentPage() {

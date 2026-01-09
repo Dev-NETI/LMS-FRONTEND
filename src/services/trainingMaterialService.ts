@@ -205,8 +205,6 @@ export interface TrainingMaterialWithCourse extends TrainingMaterial {
   course_name?: string;
   course_code?: string;
   instructor_name?: string;
-  downloads?: number;
-  views?: number;
   uploaded_by?: User;
 }
 
@@ -226,7 +224,7 @@ export const getAllTrainingMaterials = async (filters?: {
   file_category_type?: 'handout' | 'document' | 'manual' | 'all';
   course_id?: number;
   is_active?: boolean;
-  sort_by?: 'created_at' | 'title' | 'file_size' | 'views';
+  sort_by?: 'created_at' | 'title' | 'file_size';
   sort_order?: 'asc' | 'desc';
   page?: number;
   per_page?: number;
