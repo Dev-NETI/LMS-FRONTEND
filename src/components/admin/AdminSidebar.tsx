@@ -12,6 +12,7 @@ import {
   UserGroupIcon,
   ExclamationTriangleIcon,
   BuildingOfficeIcon,
+  FolderOpenIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 
@@ -65,6 +66,15 @@ const courseManagement = [
   },
 ];
 
+const documentManagement = [
+  {
+    name: "Documents",
+    href: "/admin/documents",
+    icon: FolderOpenIcon,
+    current: false,
+  },
+];
+
 const systemManagement = [
   {
     name: "Assessment Logs",
@@ -92,6 +102,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const updatedUserManagement = updateNavigation(userManagement);
   const updatedCourseManagement = updateNavigation(courseManagement);
   const updatedSystemManagement = updateNavigation(systemManagement);
+  const updatedDocumentManagement = updateNavigation(documentManagement);
 
   return (
     <>
@@ -223,6 +234,38 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 </h3>
                 <div className="space-y-1">
                   {updatedCourseManagement.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={onClose}
+                      className={classNames(
+                        item.current
+                          ? "bg-blue-50 border-blue-500 text-blue-700 border-r-2"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
+                        "group flex items-center px-3 py-2 text-sm font-medium rounded-l-md transition-colors"
+                      )}
+                    >
+                      <item.icon
+                        className={classNames(
+                          item.current
+                            ? "text-blue-500"
+                            : "text-gray-400 group-hover:text-gray-500",
+                          "mr-3 h-5 w-5"
+                        )}
+                      />
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Document Management */}
+              <div>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  Document Management
+                </h3>
+                <div className="space-y-1">
+                  {updatedDocumentManagement.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}

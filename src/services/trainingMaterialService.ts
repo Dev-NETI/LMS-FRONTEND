@@ -191,11 +191,128 @@ export const viewTrainingMaterialTraineeWithCourse = async (courseId: number, ma
     const response = await api.get(`/api/trainee/courses/${courseId}/training-materials/${materialId}/view`, {
       responseType: 'blob',
     });
-    
+
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
     return url;
   } catch (error) {
     console.error('Error viewing training material:', error);
+    throw error;
+  }
+};
+
+// Enhanced interface for document management view
+export interface TrainingMaterialWithCourse extends TrainingMaterial {
+  course_name?: string;
+  course_code?: string;
+  instructor_name?: string;
+  downloads?: number;
+  views?: number;
+  uploaded_by?: User;
+}
+
+export interface DocumentManagementStats {
+  total_documents: number;
+  total_handouts: number;
+  total_manuals: number;
+  total_size: number;
+  total_size_human: string;
+  recent_uploads: number;
+  active_courses: number;
+}
+
+// Get all training materials across all courses for document management
+export const getAllTrainingMaterials = async (filters?: {
+  search?: string;
+  file_category_type?: 'handout' | 'document' | 'manual' | 'all';
+  course_id?: number;
+  is_active?: boolean;
+  sort_by?: 'created_at' | 'title' | 'file_size' | 'views';
+  sort_order?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
+}): Promise<{
+  success: boolean;
+  data: TrainingMaterialWithCourse[];
+  stats: DocumentManagementStats;
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}> => {
+  try {
+    const params = new URLSearchParams();
+
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.file_category_type && filters.file_category_type !== 'all') {
+      params.append('file_category_type', filters.file_category_type);
+    }
+    if (filters?.course_id) params.append('course_id', filters.course_id.toString());
+    if (filters?.is_active !== undefined) params.append('is_active', filters.is_active.toString());
+    if (filters?.sort_by) params.append('sort_by', filters.sort_by);
+    if (filters?.sort_order) params.append('sort_order', filters.sort_order);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.per_page) params.append('per_page', filters.per_page.toString());
+
+    const response = await api.get(`/api/admin/documents/all${params.toString() ? `?${params.toString()}` : ''}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all training materials:', error);
+    throw error;
+  }
+};
+
+// Download a training material
+export const downloadTrainingMaterial = async (id: number): Promise<void> => {
+  try {
+    const response = await api.get(`/api/admin/training-materials/${id}/download`, {
+      responseType: 'blob',
+    });
+
+    // Get filename from content-disposition header or use default
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'document.pdf';
+    if (contentDisposition) {
+      const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+      if (matches != null && matches[1]) {
+        filename = matches[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Create blob URL and trigger download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error downloading training material:', error);
+    throw error;
+  }
+};
+
+// Bulk delete training materials
+export const bulkDeleteTrainingMaterials = async (ids: number[]): Promise<{ success: boolean; message: string; deleted_count: number }> => {
+  try {
+    const response = await api.post('/api/admin/training-materials/bulk-delete', { ids });
+    return response.data;
+  } catch (error) {
+    console.error('Error bulk deleting training materials:', error);
+    throw error;
+  }
+};
+
+// Bulk update training materials status
+export const bulkUpdateTrainingMaterialsStatus = async (ids: number[], is_active: boolean): Promise<{ success: boolean; message: string; updated_count: number }> => {
+  try {
+    const response = await api.post('/api/admin/training-materials/bulk-update-status', { ids, is_active });
+    return response.data;
+  } catch (error) {
+    console.error('Error bulk updating training materials:', error);
     throw error;
   }
 };
