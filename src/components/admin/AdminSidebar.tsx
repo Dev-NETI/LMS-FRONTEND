@@ -13,6 +13,7 @@ import {
   ExclamationTriangleIcon,
   BuildingOfficeIcon,
   FolderOpenIcon,
+  PlayCircleIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 
@@ -71,6 +72,12 @@ const documentManagement = [
     name: "Documents",
     href: "/admin/documents",
     icon: FolderOpenIcon,
+    current: false,
+  },
+  {
+    name: "Tutorials",
+    href: "/admin/tutorials",
+    icon: PlayCircleIcon,
     current: false,
   },
 ];
