@@ -69,88 +69,111 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Image */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute inset-0">
+      {/* Left Side - Enhanced Branding Panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 relative overflow-hidden">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.08),transparent_50%)]"></div>
+
+        {/* Image with Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/40 to-transparent">
           <Image
             src="/LMS.svg"
             alt="Login Background"
-            className="w-full h-full object-cover"
             fill
+            className="object-cover opacity-90"
+            priority
           />
         </div>
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="flex-1 lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-sm">
+      <div className="flex-1 lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-gray-100/50">
+        <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="lg:hidden mx-auto w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center mb-4">
-              <ShieldCheckIcon className="w-7 h-7 text-white" />
+            <div className="lg:hidden mx-auto w-16 h-16 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
+              <ShieldCheckIcon className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Administrator Login
             </h1>
+            <p className="text-gray-600">
+              Secure access to the administrative dashboard
+            </p>
           </div>
 
           {/* Login Form */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="bg-white p-8 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-200/50 backdrop-blur-sm">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Email Field */}
-              <div>
+              <div className="space-y-2">
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-semibold text-gray-700"
                 >
-                  Email
+                  Email Address
                 </label>
                 <Input
                   {...register("email")}
                   type="email"
                   id="email"
-                  placeholder="Enter your email"
-                  className="w-full h-11 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="admin@example.com"
+                  className="w-full h-12 px-4 text-base transition-all"
+                  autoComplete="email"
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-600 text-sm font-medium flex items-center gap-1 animate-in slide-in-from-top-1">
+                    <span className="inline-block w-1 h-1 bg-red-600 rounded-full"></span>
                     {errors.email.message}
                   </p>
                 )}
               </div>
 
               {/* Password Field */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Password
-                </label>
-                <div className="relative">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-semibold text-gray-700"
+                  >
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                    onClick={() =>
+                      toast.error("Password reset not implemented yet")
+                    }
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative group">
                   <Input
                     {...register("password")}
                     type={showPassword ? "text" : "password"}
                     id="password"
                     placeholder="Enter your password"
-                    className="w-full h-11 px-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full h-12 px-4 pr-12 text-base transition-all"
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+                    tabIndex={-1}
                   >
                     {showPassword ? (
-                      <EyeSlashIcon className="w-4 h-4" />
+                      <EyeSlashIcon className="w-5 h-5" />
                     ) : (
-                      <EyeIcon className="w-4 h-4" />
+                      <EyeIcon className="w-5 h-5" />
                     )}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-600 text-sm font-medium flex items-center gap-1 animate-in slide-in-from-top-1">
+                    <span className="inline-block w-1 h-1 bg-red-600 rounded-full"></span>
                     {errors.password.message}
                   </p>
                 )}
@@ -160,12 +183,13 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                size="lg"
+                className="w-full h-12 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold rounded-lg transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-6"
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                    Signing in...
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Signing in...</span>
                   </div>
                 ) : (
                   "Sign In"
@@ -175,8 +199,8 @@ export default function LoginPage() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-gray-500 text-xs mt-6">
-            Learning Management System
+          <p className="text-center text-gray-500 text-sm mt-6">
+            Learning Management System @ 2026
           </p>
         </div>
       </div>
