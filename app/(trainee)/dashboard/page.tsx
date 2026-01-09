@@ -1,496 +1,527 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { useAuth } from "@/context/AuthContext";
 import {
-  BookOpenIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  AcademicCapIcon,
-  TrophyIcon,
-  ChartBarIcon,
-  PlayIcon,
-  MegaphoneIcon,
   DocumentTextIcon,
-  ArrowRightIcon,
-  BellIcon,
-  CalendarIcon,
-  SparklesIcon,
-  BookmarkIcon,
+  ClipboardDocumentCheckIcon,
+  PlayCircleIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  VideoCameraIcon,
+  EyeIcon,
+  ClockIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { Button } from "@/src/components/ui/button";
 import {
-  CheckCircleIcon as CheckCircleIconSolid,
-  BellIcon as BellIconSolid,
-} from "@heroicons/react/24/solid";
+  getTutorials,
+  getTutorialStats,
+  viewTutorialVideo,
+  type Tutorial,
+  type TutorialStats,
+} from "@/src/services/tutorialService";
+import toast from "react-hot-toast";
 
-const stats = [
-  {
-    name: "Total Courses",
-    value: "12",
-    icon: BookOpenIcon,
-    color: "bg-blue-500",
-    change: "+2 this month",
-    changeType: "positive",
-  },
-  {
-    name: "Completed",
-    value: "8",
-    icon: CheckCircleIcon,
-    color: "bg-green-500",
-    change: "+3 this week",
-    changeType: "positive",
-  },
-  {
-    name: "In Progress",
-    value: "3",
-    icon: ClockIcon,
-    color: "bg-yellow-500",
-    change: "1 due soon",
-    changeType: "neutral",
-  },
-  {
-    name: "Certificates",
-    value: "6",
-    icon: AcademicCapIcon,
-    color: "bg-purple-500",
-    change: "+1 this month",
-    changeType: "positive",
-  },
-];
+type CategoryFilter = "all" | "user_manual" | "quality_procedure" | "tutorial";
 
-const recentCourses = [
-  {
-    id: 1,
-    name: "Maritime Safety Training",
-    progress: 85,
-    status: "In Progress",
-    nextLesson: "Emergency Procedures",
-    dueDate: "2024-11-20",
-    instructor: "Capt. Johnson",
-  },
-  {
-    id: 2,
-    name: "Navigation Fundamentals",
-    progress: 100,
-    status: "Completed",
-    completedDate: "2024-11-10",
-    instructor: "Prof. Smith",
-  },
-  {
-    id: 3,
-    name: "Communication Protocols",
-    progress: 60,
-    status: "In Progress",
-    nextLesson: "Radio Communication",
-    dueDate: "2024-11-25",
-    instructor: "Lt. Wilson",
-  },
-];
-
-const announcements = [
-  {
-    id: 1,
-    title: "New Course Available: Advanced Navigation",
-    date: "2024-11-12",
-    type: "info",
-    description: "Check out our latest course on advanced navigation techniques for maritime professionals.",
-  },
-  {
-    id: 2,
-    title: "Maintenance Schedule: System will be down Nov 15",
-    date: "2024-11-11",
-    type: "warning",
-    description: "Please note that the system will undergo scheduled maintenance from 2 AM to 6 AM.",
-  },
-  {
-    id: 3,
-    title: "Congratulations! You earned a new certificate",
-    date: "2024-11-10",
-    type: "success",
-    description: "You've successfully completed Navigation Fundamentals. Download your certificate now!",
-  },
-  {
-    id: 4,
-    title: "New Safety Regulations Updated",
-    date: "2024-11-08",
-    type: "info",
-    description: "Important updates to maritime safety regulations are now available in the training materials.",
-  },
-];
-
-const userManuals = [
-  {
-    id: 1,
-    title: "Getting Started Guide",
-    description: "Learn how to navigate the LMS platform and access your courses",
-    icon: BookOpenIcon,
-    color: "blue",
-    link: "/help/getting-started",
-  },
-  {
-    id: 2,
-    title: "How to Enroll in Courses",
-    description: "Step-by-step guide to enrolling in available training programs",
-    icon: AcademicCapIcon,
-    color: "green",
-    link: "/help/enrollment",
-  },
-  {
-    id: 3,
-    title: "Certificate Download Guide",
-    description: "Access and download your training certificates",
-    icon: DocumentTextIcon,
-    color: "purple",
-    link: "/help/certificates",
-  },
-];
-
-export default function DashboardPage() {
+export default function TraineeDashboard() {
   const { user } = useAuth();
+  const [activeFilter, setActiveFilter] = useState<CategoryFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  const [stats, setStats] = useState<TutorialStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
+  const [currentVideo, setCurrentVideo] = useState<Tutorial | null>(null);
+  const [loadingVideo, setLoadingVideo] = useState(false);
+
+  // Fetch tutorials and stats
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      const [tutorialsResponse, statsResponse] = await Promise.all([
+        getTutorials({
+          category: activeFilter !== "all" ? activeFilter : undefined,
+          is_active: true,
+          per_page: 10,
+        }),
+        getTutorialStats(),
+      ]);
+
+      setTutorials(tutorialsResponse.data);
+      setStats(statsResponse.stats);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load tutorials");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [activeFilter]);
+
+  // Filter tutorials by search query
+  const filteredTutorials = tutorials.filter(
+    (tutorial) =>
+      tutorial.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tutorial.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Handle video view - open in modal
+  const handleViewVideo = async (tutorial: Tutorial) => {
+    try {
+      setLoadingVideo(true);
+      setCurrentVideo(tutorial);
+      setShowVideoModal(true);
+
+      const url = await viewTutorialVideo(tutorial.id);
+      setCurrentVideoUrl(url);
+    } catch (error) {
+      console.error("Error viewing video:", error);
+      toast.error("Failed to load video");
+      setShowVideoModal(false);
+    } finally {
+      setLoadingVideo(false);
+    }
+  };
+
+  // Close video modal
+  const closeVideoModal = () => {
+    setShowVideoModal(false);
+    setCurrentVideoUrl(null);
+    setCurrentVideo(null);
+
+    // Revoke the blob URL to free memory
+    if (currentVideoUrl) {
+      URL.revokeObjectURL(currentVideoUrl);
+    }
+  };
+
+  const getTypeIcon = (category: string) => {
+    switch (category) {
+      case "user_manual":
+        return <DocumentTextIcon className="w-5 h-5" />;
+      case "quality_procedure":
+        return <ClipboardDocumentCheckIcon className="w-5 h-5" />;
+      case "tutorial":
+        return <PlayCircleIcon className="w-5 h-5" />;
+      default:
+        return <DocumentTextIcon className="w-5 h-5" />;
+    }
+  };
+
+  const getTypeColor = (category: string) => {
+    switch (category) {
+      case "user_manual":
+        return "bg-blue-100 text-blue-700";
+      case "quality_procedure":
+        return "bg-green-100 text-green-700";
+      case "tutorial":
+        return "bg-purple-100 text-purple-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case "user_manual":
+        return "User Manual";
+      case "quality_procedure":
+        return "Quality Procedure";
+      case "tutorial":
+        return "Video Tutorial";
+      default:
+        return category;
+    }
+  };
+
+  const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <AuthGuard>
       <Layout>
-        <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-          {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
-            <div className="relative flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <SparklesIcon className="w-6 h-6 text-yellow-300" />
-                  <span className="text-sm font-semibold text-blue-100">Dashboard</span>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                  Welcome back, {user?.f_name}! 👋
-                </h1>
-                <p className="text-blue-100 mt-2 text-lg">
-                  Ready to continue your learning journey? You have 2 pending courses.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button className="px-6 py-2.5 bg-white text-blue-700 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
-                    <PlayIcon className="w-5 h-5" />
-                    Continue Learning
-                  </button>
-                  <button className="px-6 py-2.5 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 transition-colors flex items-center gap-2">
-                    <BookOpenIcon className="w-5 h-5" />
-                    Browse Courses
-                  </button>
-                </div>
-              </div>
-              <div className="hidden lg:block">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-yellow-400/20 blur-2xl rounded-full"></div>
-                  <TrophyIcon className="w-32 h-32 text-yellow-300 relative" />
-                </div>
-              </div>
-            </div>
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Learning Resources
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Welcome back, {user?.f_name}. Explore manuals, procedures, and
+              tutorials.
+            </p>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat) => (
-              <div
-                key={stat.name}
-                className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start">
-                    <div className={`${stat.color} p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform`}>
-                      <stat.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                        {stat.name}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900">
-                        {stat.value}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p
-                    className={`text-sm font-medium flex items-center gap-1 ${
-                      stat.changeType === "positive"
-                        ? "text-green-600"
-                        : stat.changeType === "negative"
-                        ? "text-red-600"
-                        : "text-gray-600"
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left Sidebar - Filters */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+                <h2 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <FunnelIcon className="w-5 h-5 mr-2" />
+                  Filter Content
+                </h2>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setActiveFilter("all")}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                      activeFilter === "all"
+                        ? "bg-blue-100 text-blue-700 font-medium"
+                        : "hover:bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {stat.changeType === "positive" && (
-                      <CheckCircleIconSolid className="w-4 h-4" />
-                    )}
-                    {stat.change}
+                    All Resources
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter("user_manual")}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors flex items-center ${
+                      activeFilter === "user_manual"
+                        ? "bg-blue-100 text-blue-700 font-medium"
+                        : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <DocumentTextIcon className="w-4 h-4 mr-2" />
+                    User Manuals
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter("quality_procedure")}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors flex items-center ${
+                      activeFilter === "quality_procedure"
+                        ? "bg-green-100 text-green-700 font-medium"
+                        : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <ClipboardDocumentCheckIcon className="w-4 h-4 mr-2" />
+                    Quality Procedures
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter("tutorial")}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors flex items-center ${
+                      activeFilter === "tutorial"
+                        ? "bg-purple-100 text-purple-700 font-medium"
+                        : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <VideoCameraIcon className="w-4 h-4 mr-2" />
+                    Video Tutorials
+                  </button>
+                </div>
+
+                <hr className="my-6" />
+
+                <h3 className="font-semibold text-gray-900 mb-3 text-sm">
+                  Quick Stats
+                </h3>
+                {stats && (
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Resources</span>
+                      <span className="font-medium">
+                        {stats.total_tutorials}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Views</span>
+                      <span className="font-medium">
+                        {stats.total_views.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Recent Uploads</span>
+                      <span className="font-medium">
+                        {stats.recent_uploads}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Main Feed */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Search Bar */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search manuals, procedures, or tutorials..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Loading State */}
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading tutorials...</p>
+                  </div>
+                </div>
+              ) : filteredTutorials.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                  <DocumentTextIcon className="w-16 h-16 text-gray-400 mx-auto" />
+                  <h3 className="mt-4 text-lg font-medium text-gray-900">
+                    No tutorials found
+                  </h3>
+                  <p className="mt-2 text-gray-600">
+                    Try adjusting your search or filter criteria
                   </p>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Courses */}
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <BookOpenIcon className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                      My Recent Courses
-                    </h2>
-                  </div>
-                  <a
-                    href="/courses"
-                    className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all"
-                  >
-                    View all
-                    <ArrowRightIcon className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-              <div className="p-6 space-y-3">
-                {recentCourses.map((course) => (
+              ) : (
+                /* Feed Items */
+                filteredTutorials.map((tutorial) => (
                   <div
-                    key={course.id}
-                    className="border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-blue-300 transition-all group cursor-pointer bg-gradient-to-r from-white to-gray-50"
+                    key={tutorial.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-                            <BookmarkIcon className="w-5 h-5 text-blue-600" />
+                    {/* Post Header */}
+                    <div className="p-4 flex items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {tutorial.uploaded_by?.f_name?.charAt(0) || "A"}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {tutorial.uploaded_by?.f_name || "Admin"}{" "}
+                            {tutorial.uploaded_by?.l_name || "Admin"}
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 text-lg group-hover:text-blue-600 transition-colors">
-                              {course.name}
-                            </h3>
-                            <p className="text-sm text-gray-600 mt-1 flex items-center gap-1">
-                              <AcademicCapIcon className="w-4 h-4" />
-                              Instructor: {course.instructor}
-                            </p>
-
-                            {course.status === "In Progress" && (
-                              <div className="mt-3">
-                                <div className="flex items-center justify-between text-sm mb-2">
-                                  <span className="text-gray-600 font-medium">Progress</span>
-                                  <span className="font-bold text-blue-600">
-                                    {course.progress}%
-                                  </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                  <div
-                                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-500 shadow-sm"
-                                    style={{ width: `${course.progress}%` }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {course.nextLesson && (
-                              <div className="mt-3 flex items-center gap-2 text-sm">
-                                <ClockIcon className="w-4 h-4 text-orange-500" />
-                                <span className="text-gray-700">
-                                  Next: <span className="font-semibold text-blue-600">{course.nextLesson}</span>
-                                </span>
-                              </div>
-                            )}
-
-                            {course.dueDate && course.status === "In Progress" && (
-                              <div className="mt-2 flex items-center gap-2 text-sm text-orange-600">
-                                <CalendarIcon className="w-4 h-4" />
-                                Due: {course.dueDate}
-                              </div>
-                            )}
+                          <div className="text-sm text-gray-500">
+                            System Administrator •{" "}
+                            {formatTimestamp(tutorial.created_at)}
                           </div>
                         </div>
                       </div>
-
-                      <div className="flex flex-col items-end ml-4 gap-3">
-                        <span
-                          className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${
-                            course.status === "Completed"
-                              ? "bg-gradient-to-r from-green-500 to-green-600 text-white"
-                              : course.status === "In Progress"
-                              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                              : "bg-gray-200 text-gray-800"
-                          }`}
-                        >
-                          {course.status}
+                      <div
+                        className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getTypeColor(
+                          tutorial.category
+                        )}`}
+                      >
+                        {getTypeIcon(tutorial.category)}
+                        <span className="ml-1">
+                          {getCategoryLabel(tutorial.category)}
                         </span>
-
-                        {course.status === "In Progress" && (
-                          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors shadow-sm">
-                            <PlayIcon className="w-4 h-4" />
-                            Continue
-                          </button>
-                        )}
-
-                        {course.status === "Completed" && (
-                          <button className="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors">
-                            <CheckCircleIconSolid className="w-4 h-4" />
-                            View
-                          </button>
-                        )}
                       </div>
                     </div>
+
+                    {/* Post Content */}
+                    <div className="px-4 pb-3">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        {tutorial.title}
+                      </h3>
+                      {tutorial.description && (
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {tutorial.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Thumbnail/Preview */}
+                    <div
+                      className="relative h-64 flex items-center justify-center cursor-pointer overflow-hidden group bg-black"
+                      onClick={() => handleViewVideo(tutorial)}
+                    >
+                      {/* Play button overlay */}
+                      <PlayCircleIcon className="w-20 h-20 text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-200" />
+                      {tutorial.duration_formatted && (
+                        <div className="absolute bottom-4 right-4 bg-gray-800 bg-opacity-75 text-white px-2 py-1 rounded text-sm font-medium">
+                          {tutorial.duration_formatted}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stats Bar */}
+                    <div className="px-4 py-2 border-t border-gray-200 flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center space-x-4">
+                        <span className="flex items-center">
+                          <EyeIcon className="w-4 h-4 mr-1" />
+                          {tutorial.total_views.toLocaleString()} views
+                        </span>
+                        <span className="flex items-center">
+                          <ClockIcon className="w-4 h-4 mr-1" />
+                          {tutorial.duration_formatted || "N/A"}
+                        </span>
+                      </div>
+                      <span className="text-xs">
+                        {tutorial.video_file_size_human}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="px-4 py-3 border-t border-gray-200">
+                      <Button
+                        className="w-full flex items-center justify-center space-x-2"
+                        onClick={() => handleViewVideo(tutorial)}
+                      >
+                        <PlayCircleIcon className="w-5 h-5" />
+                        <span>
+                          Watch{" "}
+                          {tutorial.category === "tutorial"
+                            ? "Tutorial"
+                            : "Video"}
+                        </span>
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
 
-            {/* Announcements */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <MegaphoneIcon className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Announcements
-                  </h2>
-                </div>
-              </div>
-              <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
-                {announcements.map((announcement) => (
-                  <div
-                    key={announcement.id}
-                    className={`rounded-lg p-4 border-l-4 hover:shadow-md transition-all cursor-pointer ${
-                      announcement.type === "success"
-                        ? "border-l-green-500 bg-green-50 hover:bg-green-100"
-                        : announcement.type === "warning"
-                        ? "border-l-orange-500 bg-orange-50 hover:bg-orange-100"
-                        : "border-l-blue-500 bg-blue-50 hover:bg-blue-100"
-                    }`}
+            {/* Video Modal */}
+            {showVideoModal && (
+              <div className="fixed inset-0 backdrop-blur-sm bg-opacity-90 flex items-center justify-center z-50 p-4">
+                <div className="relative w-full max-w-6xl">
+                  {/* Close Button */}
+                  <button
+                    onClick={closeVideoModal}
+                    className="absolute -top-12 right-0 text-black hover:text-gray-300 transition-colors"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        announcement.type === "success"
-                          ? "bg-green-200"
-                          : announcement.type === "warning"
-                          ? "bg-orange-200"
-                          : "bg-blue-200"
-                      }`}>
-                        <BellIconSolid className={`w-4 h-4 ${
-                          announcement.type === "success"
-                            ? "text-green-700"
-                            : announcement.type === "warning"
-                            ? "text-orange-700"
-                            : "text-blue-700"
-                        }`} />
+                    <XMarkIcon className="w-8 h-8" />
+                  </button>
+
+                  {/* Video Info */}
+                  {currentVideo && (
+                    <div className="mb-4">
+                      <h2 className="text-2xl font-bold text-black mb-2">
+                        {currentVideo.title}
+                      </h2>
+                      {currentVideo.description && (
+                        <p className="text-black text-sm">
+                          {currentVideo.description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Video Player */}
+                  <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+                    {loadingVideo ? (
+                      <div className="flex items-center justify-center h-96">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+                          <p className="mt-4 text-black">Loading video...</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 text-sm mb-1">
-                          {announcement.title}
-                        </h4>
-                        <p className="text-xs text-gray-600 mb-2">
-                          {announcement.description}
-                        </p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                          <ClockIcon className="w-3 h-3" />
-                          {announcement.date}
-                        </p>
+                    ) : currentVideoUrl ? (
+                      <video
+                        controls
+                        autoPlay
+                        className="w-full h-auto max-h-[80vh]"
+                        src={currentVideoUrl}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <div className="flex items-center justify-center h-96">
+                        <p className="text-black">Failed to load video</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Video Stats */}
+                  {currentVideo && (
+                    <div className="mt-4 flex items-center justify-between text-sm text-black">
+                      <div className="flex items-center space-x-4">
+                        <span className="flex items-center">
+                          <EyeIcon className="w-4 h-4 mr-1" />
+                          {currentVideo.total_views.toLocaleString()} views
+                        </span>
+                        <span className="flex items-center">
+                          <ClockIcon className="w-4 h-4 mr-1" />
+                          {currentVideo.duration_formatted || "N/A"}
+                        </span>
+                      </div>
+                      <span>{currentVideo.video_file_size_human}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Right Sidebar - Trending & Stats */}
+            <div className="lg:col-span-1">
+              <div className="space-y-4 sticky top-6">
+                {/* Category Stats */}
+                {stats && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 className="font-semibold text-gray-900 mb-4">
+                      Category Breakdown
+                    </h2>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+                        <div className="flex items-center">
+                          <DocumentTextIcon className="w-4 h-4 mr-2 text-blue-600" />
+                          <span className="text-sm text-gray-700">
+                            User Manuals
+                          </span>
+                        </div>
+                        <span className="font-medium text-gray-900">
+                          {stats.total_user_manuals}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+                        <div className="flex items-center">
+                          <ClipboardDocumentCheckIcon className="w-4 h-4 mr-2 text-green-600" />
+                          <span className="text-sm text-gray-700">
+                            Quality Procedures
+                          </span>
+                        </div>
+                        <span className="font-medium text-gray-900">
+                          {stats.total_quality_procedures}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+                        <div className="flex items-center">
+                          <PlayCircleIcon className="w-4 h-4 mr-2 text-purple-600" />
+                          <span className="text-sm text-gray-700">
+                            Video Tutorials
+                          </span>
+                        </div>
+                        <span className="font-medium text-gray-900">
+                          {stats.total_video_tutorials}
+                        </span>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
+                )}
 
-          {/* User Manuals & Quick Help */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <DocumentTextIcon className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    User Manuals & Help Center
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Get started with helpful guides and tutorials
+                {/* Quick Actions */}
+                <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
+                  <h2 className="font-semibold mb-2">Need Help?</h2>
+                  <p className="text-sm text-blue-100 mb-4">
+                    Contact support or browse our help center for assistance.
                   </p>
+                  <Button
+                    variant="outline"
+                    className="w-full bg-white text-blue-600 hover:bg-blue-50 border-0"
+                  >
+                    Get Support
+                  </Button>
                 </div>
               </div>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {userManuals.map((manual) => (
-                <a
-                  key={manual.id}
-                  href={manual.link}
-                  className="group relative overflow-hidden rounded-xl border-2 border-gray-200 p-6 hover:border-blue-400 hover:shadow-lg transition-all bg-gradient-to-br from-white to-gray-50"
-                >
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full -mr-10 -mt-10 opacity-50 group-hover:scale-150 transition-transform"></div>
-                  <div className="relative">
-                    <div className={`p-3 bg-${manual.color}-100 rounded-xl w-fit group-hover:scale-110 transition-transform`}>
-                      <manual.icon className={`w-8 h-8 text-${manual.color}-600`} />
-                    </div>
-                    <h3 className="font-bold text-gray-900 mt-4 text-lg group-hover:text-blue-600 transition-colors">
-                      {manual.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-2 leading-relaxed">
-                      {manual.description}
-                    </p>
-                    <div className="mt-4 flex items-center text-blue-600 font-semibold text-sm group-hover:gap-2 transition-all">
-                      Read More
-                      <ArrowRightIcon className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <SparklesIcon className="w-5 h-5 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Quick Actions
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button className="flex flex-col items-center p-6 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all group">
-                <div className="p-3 bg-blue-100 rounded-xl group-hover:scale-110 transition-transform">
-                  <BookOpenIcon className="w-8 h-8 text-blue-600" />
-                </div>
-                <span className="text-sm font-semibold text-gray-700 mt-3 group-hover:text-blue-600 transition-colors">
-                  Browse Courses
-                </span>
-              </button>
-              <button className="flex flex-col items-center p-6 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all group">
-                <div className="p-3 bg-green-100 rounded-xl group-hover:scale-110 transition-transform">
-                  <ChartBarIcon className="w-8 h-8 text-green-600" />
-                </div>
-                <span className="text-sm font-semibold text-gray-700 mt-3 group-hover:text-green-600 transition-colors">
-                  View Progress
-                </span>
-              </button>
-              <button className="flex flex-col items-center p-6 rounded-xl border-2 border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all group">
-                <div className="p-3 bg-purple-100 rounded-xl group-hover:scale-110 transition-transform">
-                  <AcademicCapIcon className="w-8 h-8 text-purple-600" />
-                </div>
-                <span className="text-sm font-semibold text-gray-700 mt-3 group-hover:text-purple-600 transition-colors">
-                  Certificates
-                </span>
-              </button>
-              <button className="flex flex-col items-center p-6 rounded-xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 transition-all group">
-                <div className="p-3 bg-orange-100 rounded-xl group-hover:scale-110 transition-transform">
-                  <CalendarIcon className="w-8 h-8 text-orange-600" />
-                </div>
-                <span className="text-sm font-semibold text-gray-700 mt-3 group-hover:text-orange-600 transition-colors">
-                  My Schedule
-                </span>
-              </button>
             </div>
           </div>
         </div>
