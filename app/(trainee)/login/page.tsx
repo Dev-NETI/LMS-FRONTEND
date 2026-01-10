@@ -13,7 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import Image from "next/image";
 
 const loginSchema = z.object({

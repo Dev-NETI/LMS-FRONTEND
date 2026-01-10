@@ -33,7 +33,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { FlagIcon as FlagIconSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 interface AssessmentTakingProps {
   assessmentId: number;

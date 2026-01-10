@@ -6,7 +6,7 @@ import InsturctorLayout from "@/src/components/instructor/InstructorLayout";
 import AuthGuard from "@/src/components/auth/AuthGuard";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@mui/material";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
   ArrowLeftIcon,
   CalendarIcon,

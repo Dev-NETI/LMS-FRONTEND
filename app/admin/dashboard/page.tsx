@@ -23,7 +23,7 @@ import {
   type Tutorial,
   type TutorialStats,
 } from "@/src/services/tutorialService";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import Link from "next/link";
 import Image from "next/image";
 

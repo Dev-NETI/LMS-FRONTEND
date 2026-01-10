@@ -14,7 +14,7 @@ import {
   getEnrolledCourses,
   type EnrolledCourse,
 } from "@/src/services/courseService";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 export default function CoursesPage() {
   const router = useRouter();

@@ -7,7 +7,7 @@ import AdminLayout from "@/src/components/admin/AdminLayout";
 import AuthGuard from "@/src/components/auth/AuthGuard";
 import { Button } from "@/src/components/ui/button";
 import { getCourseById, AdminCourse } from "@/src/services/courseService";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
   ArrowLeftIcon,
   XCircleIcon,
@@ -27,13 +27,17 @@ import CourseDetailsTable from "@/src/components/admin/course/CourseDetailsTable
 import QuestionBank from "@/src/components/admin/course/QuestionBank";
 import AssessmentManagement from "@/src/components/admin/course/AssessmentManagement";
 
-
 export default function CourseDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [course, setCourse] = useState<AdminCourse | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "content" | "schedule" | "materials" | "questions" | "assessments"
+    | "overview"
+    | "content"
+    | "schedule"
+    | "materials"
+    | "questions"
+    | "assessments"
   >("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +59,6 @@ export default function CourseDetailsPage() {
           setError(courseResponse.message || "Failed to fetch course");
           toast.error(courseResponse.message || "Failed to fetch course");
         }
-
       } catch (err) {
         const errorMessage =
           err instanceof Error
@@ -334,9 +337,13 @@ export default function CourseDetailsPage() {
             <CourseSchedulePage courseId={course.courseid} />
           )}
 
-          {activeTab === "questions" && <QuestionBank courseId={course.courseid} />}
+          {activeTab === "questions" && (
+            <QuestionBank courseId={course.courseid} />
+          )}
 
-          {activeTab === "assessments" && <AssessmentManagement courseId={course.courseid} />}
+          {activeTab === "assessments" && (
+            <AssessmentManagement courseId={course.courseid} />
+          )}
         </div>
       </AdminLayout>
     </AuthGuard>

@@ -15,7 +15,7 @@ import {
   TraineeAssessmentResult,
   getScoreBadgeColor,
 } from "@/src/services/assessmentService";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 interface AssessmentResultsProps {
   scheduleId: number;

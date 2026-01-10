@@ -16,7 +16,7 @@ import {
   StatsCardSkeleton,
 } from "@/src/components/ui/course-skeleton";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
   MagnifyingGlassIcon,
   EyeIcon,

@@ -28,7 +28,7 @@ import {
   type TrainingMaterialWithCourse,
   type DocumentManagementStats,
 } from "@/src/services/trainingMaterialService";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 type ViewMode = "grid" | "list" | "table";
 type CategoryFilter = "all" | "handout" | "document" | "manual";

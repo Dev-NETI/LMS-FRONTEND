@@ -23,7 +23,7 @@ import {
   type Tutorial,
   type TutorialStats,
 } from "@/src/services/tutorialService";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 type CategoryFilter = "all" | "user_manual" | "quality_procedure" | "tutorial";
 
