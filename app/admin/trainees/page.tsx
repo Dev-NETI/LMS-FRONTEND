@@ -147,7 +147,7 @@ export default function TraineesPage() {
               <div className="inline-flex items-center px-4 py-2 bg-blue-50 rounded-lg">
                 <AcademicCapIcon className="w-5 h-5 text-blue-600 mr-2" />
                 <span className="text-sm font-medium text-blue-900">
-                  {pagination?.totalItems || 0} Active Trainees
+                  {pagination?.totalItems || 0}
                 </span>
               </div>
             </div>
