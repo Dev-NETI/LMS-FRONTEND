@@ -119,3 +119,78 @@ export const getAllTrainees = async (params: GetTraineesParams = {}): Promise<Tr
     throw error;
   }
 };
+
+export interface EnrolledCourse {
+  enrollment_id: number;
+  course_id: number;
+  course_name: string;
+  course_code: string;
+  date_registered: string;
+  date_completed?: string;
+  status: string;
+  schedule_id: number;
+}
+
+export interface AssessmentAttempt {
+  attempt_id: number;
+  assessment_id: number;
+  assessment_title: string;
+  attempt_number: number;
+  started_at: string;
+  submitted_at?: string;
+  time_remaining?: number;
+  score?: number;
+  percentage?: number;
+  status: string;
+  is_passed?: boolean;
+  created_at: string;
+}
+
+export interface SecurityLog {
+  log_id: number;
+  assessment_id: number;
+  assessment_title: string;
+  attempt_id?: number;
+  activity: string;
+  event_type: string;
+  severity: string;
+  ip_address: string;
+  user_agent: string;
+  additional_data?: any;
+  event_timestamp: string;
+  created_at: string;
+}
+
+export interface TraineeStatistics {
+  total_courses: number;
+  completed_courses: number;
+  total_assessments: number;
+  passed_assessments: number;
+  failed_assessments: number;
+  security_violations: number;
+  average_score: number;
+}
+
+export interface TraineeProfile {
+  trainee: Trainee;
+  enrolled_courses: EnrolledCourse[];
+  assessment_attempts: AssessmentAttempt[];
+  security_logs: SecurityLog[];
+  statistics: TraineeStatistics;
+}
+
+export interface TraineeProfileResponse {
+  success: boolean;
+  data: TraineeProfile;
+  message: string;
+}
+
+export const getTraineeProfile = async (traineeId: number): Promise<TraineeProfileResponse> => {
+  try {
+    const response = await api.get(`/api/admin/trainees/${traineeId}/profile`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching trainee profile:', error);
+    throw error;
+  }
+};

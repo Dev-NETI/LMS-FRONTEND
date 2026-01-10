@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Trainee,
   getAllTrainees,
@@ -12,7 +13,6 @@ import {
   MagnifyingGlassIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  EllipsisVerticalIcon,
   CheckCircleIcon,
   ArrowUpIcon,
   ArrowDownIcon,
@@ -269,7 +269,10 @@ export default function TraineesPage() {
                     trainees.map((trainee) => (
                       <tr
                         key={trainee.trainee_id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() =>
+                          (window.location.href = `/admin/trainees/${trainee.trainee_id}`)
+                        }
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -296,10 +299,16 @@ export default function TraineesPage() {
                             Active
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                            <EllipsisVerticalIcon className="w-5 h-5" />
-                          </button>
+                        <td
+                          className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link
+                            href={`/admin/trainees/${trainee.trainee_id}`}
+                            className="text-blue-600 hover:text-blue-900 font-medium"
+                          >
+                            View Profile
+                          </Link>
                         </td>
                       </tr>
                     ))
