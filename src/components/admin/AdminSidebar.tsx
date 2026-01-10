@@ -33,7 +33,7 @@ const navigation = [
 
 const userManagement = [
   {
-    name: "All Users",
+    name: "Administrator",
     href: "/admin/user-management/all-users",
     icon: UsersIcon,
     current: false,
