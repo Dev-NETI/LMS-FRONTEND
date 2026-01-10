@@ -223,9 +223,7 @@ export default function AssessmentResults({
 
                   return (
                     <React.Fragment key={rowKey}>
-                      <tr
-                        className="hover:bg-gray-50 transition-colors"
-                      >
+                      <tr className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="font-medium text-gray-900">
@@ -257,7 +255,7 @@ export default function AssessmentResults({
                                 result.best_percentage
                               )}`}
                             >
-                              {result.best_percentage.toFixed(1)}%
+                              {Number(result.best_percentage).toFixed(1)}%
                             </span>
                           ) : (
                             <span className="text-sm text-gray-500">-</span>
@@ -338,7 +336,9 @@ export default function AssessmentResults({
                                       >
                                         {attempt.percentage !== undefined &&
                                         attempt.percentage !== null
-                                          ? `${attempt.percentage.toFixed(1)}%`
+                                          ? `${Number(
+                                              attempt.percentage
+                                            ).toFixed(1)}%`
                                           : "N/A"}
                                       </p>
                                     </div>

@@ -40,6 +40,14 @@ export interface Assessment {
     status: 'in_progress' | 'submitted' | 'expired';
   };
   attempts?: AssessmentAttempt[];
+  // Schedule assignment information (admin)
+  assigned_schedules?: {
+    schedule_id: number;
+    schedule_name: string;
+    schedule_code: string;
+    available_from?: string;
+    available_until?: string;
+  }[];
 }
 
 export interface AssessmentQuestion {
