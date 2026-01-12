@@ -484,7 +484,8 @@ export default function InstructorScheduleDetailsPage() {
               </button>
 
               {/* Only show Progress Monitoring if mode of delivery is 4 (self-paced distance learning) */}
-              {schedule.course?.modeofdeliveryid === 4 && (
+              {(schedule.course?.modeofdeliveryid === 3 ||
+                schedule.course?.modeofdeliveryid === 4) && (
                 <button
                   onClick={() => setActiveTab("progress")}
                   className={`flex-1 py-4 px-4 text-center border-b-2 font-semibold text-sm flex items-center justify-center transition-all ${
@@ -573,7 +574,8 @@ export default function InstructorScheduleDetailsPage() {
             )}
 
             {activeTab === "progress" &&
-              schedule.course?.modeofdeliveryid === 4 && (
+              (schedule.course?.modeofdeliveryid === 3 ||
+                schedule.course?.modeofdeliveryid === 4) && (
                 <div className="p-6">
                   <ProgressMonitoring scheduleId={schedule.scheduleid} />
                 </div>

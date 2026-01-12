@@ -131,7 +131,8 @@ export default function CourseOverviewPage() {
           )}
 
           {activeTab === "progress" &&
-            schedule?.course?.modeofdeliveryid === 4 && (
+            (schedule?.course?.modeofdeliveryid === 3 ||
+              schedule?.course?.modeofdeliveryid === 4) && (
               <TraineeProgressTracking
                 scheduleId={Number(params.scheduleId)}
                 courseId={schedule.courseid}

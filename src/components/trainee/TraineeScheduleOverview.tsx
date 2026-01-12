@@ -288,7 +288,8 @@ export default function TraineeScheduleOverview({
             Course Overview
           </button>
 
-          {schedule.course?.modeofdeliveryid === 4 && (
+          {(schedule.course?.modeofdeliveryid === 3 ||
+            schedule.course?.modeofdeliveryid === 4) && (
             <button
               onClick={() => onTabChange("progress")}
               className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center justify-center transition-colors ${
