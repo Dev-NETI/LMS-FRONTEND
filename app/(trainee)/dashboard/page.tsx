@@ -392,24 +392,24 @@ export default function TraineeDashboard() {
 
             {/* Video Modal */}
             {showVideoModal && (
-              <div className="fixed inset-0 backdrop-blur-sm bg-opacity-90 flex items-center justify-center z-50 p-4">
-                <div className="relative w-full max-w-6xl">
+              <div className="fixed inset-0 backdrop-blur-md  bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="relative w-full max-w-6xl bg-white rounded-xl shadow-2xl p-6">
                   {/* Close Button */}
                   <button
                     onClick={closeVideoModal}
-                    className="absolute -top-12 right-0 text-black hover:text-gray-300 transition-colors"
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
                   >
                     <XMarkIcon className="w-8 h-8" />
                   </button>
 
                   {/* Video Info */}
                   {currentVideo && (
-                    <div className="mb-4">
-                      <h2 className="text-2xl font-bold text-black mb-2">
+                    <div className="mb-4 pr-12">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">
                         {currentVideo.title}
                       </h2>
                       {currentVideo.description && (
-                        <p className="text-black text-sm">
+                        <p className="text-gray-600 text-sm">
                           {currentVideo.description}
                         </p>
                       )}
@@ -417,33 +417,33 @@ export default function TraineeDashboard() {
                   )}
 
                   {/* Video Player */}
-                  <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+                  <div className="bg-black rounded-lg overflow-hidden shadow-lg">
                     {loadingVideo ? (
                       <div className="flex items-center justify-center h-96">
                         <div className="text-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
-                          <p className="mt-4 text-black">Loading video...</p>
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="mt-4 text-gray-600">Loading video...</p>
                         </div>
                       </div>
                     ) : currentVideoUrl ? (
                       <video
                         controls
                         autoPlay
-                        className="w-full h-auto max-h-[80vh]"
+                        className="w-full h-auto max-h-[70vh]"
                         src={currentVideoUrl}
                       >
                         Your browser does not support the video tag.
                       </video>
                     ) : (
                       <div className="flex items-center justify-center h-96">
-                        <p className="text-black">Failed to load video</p>
+                        <p className="text-gray-600">Failed to load video</p>
                       </div>
                     )}
                   </div>
 
                   {/* Video Stats */}
                   {currentVideo && (
-                    <div className="mt-4 flex items-center justify-between text-sm text-black">
+                    <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
                       <div className="flex items-center space-x-4">
                         <span className="flex items-center">
                           <EyeIcon className="w-4 h-4 mr-1" />
